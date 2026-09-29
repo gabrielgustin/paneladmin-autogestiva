@@ -24,11 +24,17 @@ export default function Page() {
   const totals = useMemo(() => data?.projects.reduce((a, p) => ({ compute: a.compute + p.computeHours, storage: a.storage + p.storageGbHours, transfer: a.transfer + p.transferGb }), { compute: 0, storage: 0, transfer: 0 }) ?? { compute: 0, storage: 0, transfer: 0 }, [data])
 
   return <main className="min-h-screen bg-background text-foreground">
+    <div className="border-b border-border bg-card">
+      <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-4 md:px-10">
+        <div className="flex items-center gap-3"><div className="flex size-10 items-center justify-center rounded-md border-2 border-brand text-xs font-black leading-none text-brand">AG</div><div><div className="text-sm font-black tracking-[0.18em] text-brand">AUTOGESTIVA</div><div className="text-[10px] font-medium uppercase tracking-[0.18em] text-muted-foreground">Control de infraestructura</div></div></div>
+        <button onClick={load} className="inline-flex h-10 items-center justify-center gap-2 rounded-full bg-orange px-5 text-sm font-semibold text-orange-foreground shadow-sm transition-transform hover:-translate-y-0.5 disabled:opacity-50" disabled={loading}><RefreshCw className={loading ? 'size-4 animate-spin' : 'size-4'} />{loading ? 'Sincronizando' : 'Actualizar'}</button>
+      </div>
+    </div>
+    <div className="relative overflow-hidden bg-brand text-brand-foreground">
+      <div className="absolute inset-0 opacity-10" style={{ backgroundImage: 'linear-gradient(rgba(255,255,255,.7) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,.7) 1px, transparent 1px)', backgroundSize: '42px 42px' }} />
+      <div className="relative mx-auto max-w-7xl px-6 py-12 md:px-10 md:py-16"><div className="max-w-3xl"><div className="mb-5 inline-flex items-center gap-2 rounded-full border border-brand-foreground/20 bg-brand-foreground/10 px-3 py-1.5 text-xs font-semibold text-brand-foreground"><span className="size-2 rounded-full bg-orange" />Monitoreo de cuenta</div><h1 className="max-w-2xl text-4xl font-black tracking-tight text-balance md:text-6xl">Tu infraestructura, <span className="text-orange">bajo control.</span></h1><p className="mt-5 max-w-xl text-base leading-7 text-brand-foreground/75">Una vista consolidada de todos tus proyectos Neon, recursos utilizados y actividad de tu cuenta.</p></div></div>
+    </div>
     <div className="mx-auto max-w-7xl px-6 py-8 md:px-10">
-      <header className="flex flex-col gap-6 border-b border-border pb-8 md:flex-row md:items-end md:justify-between">
-        <div><div className="mb-4 flex items-center gap-2 text-sm font-semibold tracking-wide text-primary"><span className="h-2 w-2 rounded-full bg-primary" />NEON CONTROL</div><h1 className="text-4xl font-semibold tracking-tight text-balance md:text-5xl">Consumo de tu cuenta</h1><p className="mt-3 max-w-xl text-muted-foreground leading-6">Una vista consolidada de todos tus proyectos Neon y sus recursos utilizados.</p></div>
-        <button onClick={load} className="inline-flex h-10 items-center justify-center gap-2 rounded-md border border-border bg-card px-4 text-sm font-medium transition-colors hover:bg-accent disabled:opacity-50" disabled={loading}><RefreshCw className={loading ? 'size-4 animate-spin' : 'size-4'} />{loading ? 'Sincronizando' : 'Actualizar datos'}</button>
-      </header>
       {error ? <div className="mt-8 rounded-lg border border-destructive/30 bg-destructive/10 p-4 text-sm text-destructive">{error}</div> : <>
         <section className="grid gap-4 py-8 sm:grid-cols-2 lg:grid-cols-4">
           <Metric icon={<Wallet />} label="Proyectos" value={loading ? '—' : number.format(data?.projects.length ?? 0)} detail={`${data?.organizations.length ?? 0} organizaciones`} />
