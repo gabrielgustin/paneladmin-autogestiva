@@ -40,6 +40,9 @@
   --color-brand-foreground: var(--brand-foreground);
   --color-orange: var(--orange);
   --color-orange-foreground: var(--orange-foreground);
+  --color-resource-panel: var(--resource-panel);
+  --color-resource-panel-header: var(--resource-panel-header);
+  --color-resource-panel-border: var(--resource-panel-border);
   --radius-sm: calc(var(--radius) * 0.6);
   --radius-md: calc(var(--radius) * 0.8);
   --radius-lg: var(--radius);
@@ -79,6 +82,9 @@
   --brand-foreground: oklch(0.98 0.01 255);
   --orange: oklch(0.7 0.16 52);
   --orange-foreground: oklch(0.18 0.03 255);
+  --resource-panel: oklch(0.235 0.045 255);
+  --resource-panel-header: oklch(0.275 0.05 255);
+  --resource-panel-border: oklch(0.42 0.08 255);
   --sidebar: oklch(0.985 0 0);
   --sidebar-foreground: oklch(0.145 0 0);
   --sidebar-primary: oklch(0.205 0 0);
