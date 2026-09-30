@@ -23,7 +23,7 @@ export default function Page() {
 
   const totals = useMemo(() => data?.projects.reduce((a, p) => ({ compute: a.compute + p.computeHours, storage: a.storage + p.storageGbHours, transfer: a.transfer + p.transferGb }), { compute: 0, storage: 0, transfer: 0 }) ?? { compute: 0, storage: 0, transfer: 0 }, [data])
 
-  return <main className="min-h-screen bg-background text-foreground">
+  return <main className="min-h-screen bg-brand text-brand-foreground">
     <div className="border-b border-brand-foreground/10 bg-brand">
       <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-4 md:px-10">
         <div className="flex items-center gap-4"><img src="https://hebbkx1anhila5yf.public.blob.vercel-storage.com/Logo%20Autogestiva%20ultimo-jvfYcg0UFHOXhCTcfbqPO2beeBMSGD.png" alt="Autogestiva" className="h-12 w-auto object-contain" /><div className="hidden border-l border-brand-foreground/20 pl-4 text-[10px] font-medium uppercase tracking-[0.18em] text-brand-foreground/65 sm:block">Control de infraestructura</div></div>
@@ -34,7 +34,7 @@ export default function Page() {
       <div className="absolute inset-0 opacity-10" style={{ backgroundImage: 'linear-gradient(rgba(255,255,255,.7) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,.7) 1px, transparent 1px)', backgroundSize: '42px 42px' }} />
       <div className="relative mx-auto max-w-7xl px-6 py-12 md:px-10 md:py-16"><div className="max-w-3xl"><div className="mb-5 inline-flex items-center gap-2 rounded-full border border-brand-foreground/20 bg-brand-foreground/10 px-3 py-1.5 text-xs font-semibold text-brand-foreground"><span className="size-2 rounded-full bg-orange" />Monitoreo de cuenta</div><h1 className="max-w-2xl text-4xl font-black tracking-tight text-balance md:text-6xl">Tu infraestructura, <span className="text-orange">bajo control.</span></h1><p className="mt-5 max-w-xl text-base leading-7 text-brand-foreground/75">Una vista consolidada de todos tus proyectos Neon, recursos utilizados y actividad de tu cuenta.</p></div></div>
     </div>
-    <div className="mx-auto max-w-7xl rounded-2xl border border-brand/20 bg-brand px-4 py-6 text-brand-foreground md:px-6 md:py-8">
+    <div className="mx-auto max-w-7xl bg-brand px-4 py-6 text-brand-foreground md:px-6 md:py-8">
       {error ? <div className="mt-8 rounded-lg border border-destructive/30 bg-destructive/10 p-4 text-sm text-destructive">{error}</div> : <>
         <section className="grid gap-4 border-b border-border pb-8 sm:grid-cols-2 lg:grid-cols-4">
           <Metric icon={<Wallet />} label="Proyectos" value={loading ? '—' : number.format(data?.projects.length ?? 0)} detail={`${data?.organizations.length ?? 0} organizaciones`} />
@@ -52,4 +52,4 @@ export default function Page() {
   </main>
 }
 
-function Metric({ icon, label, value, detail }: { icon: React.ReactNode; label: string; value: string; detail: string }) { return <div className="rounded-xl border border-brand/15 bg-brand/10 p-5 shadow-sm"><div className="mb-5 flex size-9 items-center justify-center rounded-lg bg-brand text-brand-foreground">{icon}</div><div className="text-sm text-muted-foreground">{label}</div><div className="mt-1 text-2xl font-semibold tracking-tight">{value}</div><div className="mt-2 text-xs text-muted-foreground">{detail}</div></div> }
+function Metric({ icon, label, value, detail }: { icon: React.ReactNode; label: string; value: string; detail: string }) { return <div className="rounded-xl border border-brand-foreground/15 bg-brand-foreground/10 p-5 shadow-sm"><div className="mb-5 flex size-9 items-center justify-center rounded-lg bg-brand text-brand-foreground">{icon}</div><div className="text-sm text-muted-foreground">{label}</div><div className="mt-1 text-2xl font-semibold tracking-tight">{value}</div><div className="mt-2 text-xs text-muted-foreground">{detail}</div></div> }
