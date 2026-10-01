@@ -17,15 +17,48 @@ export async function GET() {
   try {
     const token = await getToken(CONNECTOR, { subject: { type: 'app' } })
     const projectsResponse = await neon('/projects', token)
-    const projects = (projectsResponse.projects ?? []).map((project: Record<string, unknown>) => ({
+    const rawProjects = (projectsResponse.projects ?? []) as Record<string, unknown>[]
+    const orgIds = [...new Set(rawProjects.map((project) => project.org_id).filter((id): id is string => typeof id === 'string'))]
+    const now = new Date()
+    const from = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1)).toISOString()
+    const to = now.toISOString()
+    const usageByProject = new Map<string, { compute: number; storage: number; transfer: number }>()
+
+    await Promise.all(orgIds.map(async (orgId) => {
+      const query = new URLSearchParams({
+        org_id: orgId,
+        from,
+        to,
+        granularity: 'daily',
+        metrics: 'compute_unit_seconds,root_branch_bytes_month,child_branch_bytes_month,public_network_transfer_bytes,private_network_transfer_bytes',
+      })
+      try {
+        const history = await neon(`/consumption_history/v2/projects?${query.toString()}`, token)
+        const rows = Array.isArray(history) ? history : history.projects ?? history.data ?? []
+        for (const row of rows as Record<string, unknown>[]) {
+          const projectId = String(row.project_id ?? row.projectId ?? '')
+          if (!projectId) continue
+          const current = usageByProject.get(projectId) ?? { compute: 0, storage: 0, transfer: 0 }
+          current.compute += Number(row.compute_unit_seconds ?? 0) / 3600
+          current.storage += Number(row.root_branch_bytes_month ?? 0) / 1024 ** 3
+          current.storage += Number(row.child_branch_bytes_month ?? 0) / 1024 ** 3
+          current.transfer += (Number(row.public_network_transfer_bytes ?? 0) + Number(row.private_network_transfer_bytes ?? 0)) / 1024 ** 3
+          usageByProject.set(projectId, current)
+        }
+      } catch (error) {
+        console.error('[v0] Neon consumption history error:', error)
+      }
+    }))
+
+    const projects = rawProjects.map((project: Record<string, unknown>) => ({
       id: project.id,
       orgId: project.org_id,
       name: project.name,
       region: project.region_id,
       plan: (project.owner as Record<string, unknown> | undefined)?.subscription_type ?? 'unknown',
-      computeHours: typeof project.compute_time_seconds === 'number' ? Number(project.compute_time_seconds) / 3600 : null,
-      storageGbHours: typeof project.data_storage_bytes_hour === 'number' ? Number(project.data_storage_bytes_hour) / 1024 ** 3 : null,
-      transferGb: typeof project.data_transfer_bytes === 'number' ? Number(project.data_transfer_bytes) / 1024 ** 3 : null,
+      computeHours: usageByProject.get(String(project.id))?.compute ?? null,
+      storageGbHours: usageByProject.get(String(project.id))?.storage ?? null,
+      transferGb: usageByProject.get(String(project.id))?.transfer ?? null,
       updatedAt: project.updated_at,
     }))
     return NextResponse.json({
