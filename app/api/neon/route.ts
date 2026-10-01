@@ -9,7 +9,10 @@ async function neon(path: string, token: string) {
     headers: { Authorization: `Bearer ${token}`, Accept: 'application/json' },
     cache: 'no-store',
   })
-  if (!response.ok) throw new Error(`Neon API error ${response.status}`)
+  if (!response.ok) {
+    const detail = await response.text()
+    throw new Error(`Neon API error ${response.status}: ${detail.slice(0, 240)}`)
+  }
   return response.json()
 }
 
@@ -20,30 +23,38 @@ export async function GET() {
     const rawProjects = (projectsResponse.projects ?? []) as Record<string, unknown>[]
     const orgIds = [...new Set(rawProjects.map((project) => project.org_id).filter((id): id is string => typeof id === 'string'))]
     const now = new Date()
-    const from = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1)).toISOString()
+    const monthStart = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1))
+    // Neon rejects a zero-length range on the first day of a month.
+    const from = (now.getTime() > monthStart.getTime()
+      ? monthStart
+      : new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() - 1, 1))).toISOString()
     const to = now.toISOString()
     const usageByProject = new Map<string, { compute: number; storage: number; transfer: number }>()
 
     await Promise.all(orgIds.map(async (orgId) => {
-      const query = new URLSearchParams({
-        org_id: orgId,
-        from,
-        to,
-        granularity: 'daily',
-        metrics: 'compute_unit_seconds,root_branch_bytes_month',
-      })
+      const baseQuery = { org_id: orgId, from, to, granularity: 'daily' }
       try {
-        const history = await neon(`/consumption_history/v2/projects?${query.toString()}`, token)
-        const rows = Array.isArray(history) ? history : history.projects ?? history.data ?? []
-        for (const row of rows as Record<string, unknown>[]) {
-          const projectId = String(row.project_id ?? row.projectId ?? '')
-          if (!projectId) continue
-          const current = usageByProject.get(projectId) ?? { compute: 0, storage: 0, transfer: 0 }
-          current.compute += Number(row.compute_unit_seconds ?? 0) / 3600
-          current.storage += Number(row.root_branch_bytes_month ?? 0) / 1024 ** 3
-          current.storage += Number(row.child_branch_bytes_month ?? 0) / 1024 ** 3
-          current.transfer += (Number(row.public_network_transfer_bytes ?? 0) + Number(row.private_network_transfer_bytes ?? 0)) / 1024 ** 3
-          usageByProject.set(projectId, current)
+        const metrics = ['compute_unit_seconds', 'root_branch_bytes_month', 'public_network_transfer_bytes', 'private_network_transfer_bytes']
+        const histories = await Promise.all(metrics.map(async (metric) => {
+          const query = new URLSearchParams({ ...baseQuery, metrics: metric })
+          try {
+            return await neon(`/consumption_history/v2/projects?${query.toString()}`, token)
+          } catch (error) {
+            console.error(`[v0] Neon metric ${metric} unavailable:`, error)
+            return null
+          }
+        }))
+        for (const history of histories) {
+          const rows = Array.isArray(history) ? history : history?.projects ?? history?.data ?? []
+          for (const row of rows as Record<string, unknown>[]) {
+            const projectId = String(row.project_id ?? row.projectId ?? '')
+            if (!projectId) continue
+            const current = usageByProject.get(projectId) ?? { compute: 0, storage: 0, transfer: 0 }
+            current.compute += Number(row.compute_unit_seconds ?? 0) / 3600
+            current.storage += (Number(row.root_branch_bytes_month ?? 0) + Number(row.child_branch_bytes_month ?? 0)) / 1024 ** 3
+            current.transfer += (Number(row.public_network_transfer_bytes ?? 0) + Number(row.private_network_transfer_bytes ?? 0)) / 1024 ** 3
+            usageByProject.set(projectId, current)
+          }
         }
       } catch (error) {
         console.error('[v0] Neon consumption history error:', error)
