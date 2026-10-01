@@ -23,9 +23,9 @@ export async function GET() {
       name: project.name,
       region: project.region_id,
       plan: (project.owner as Record<string, unknown> | undefined)?.subscription_type ?? 'unknown',
-      computeHours: Number(project.compute_time_seconds ?? 0) / 3600,
-      storageGbHours: Number(project.data_storage_bytes_hour ?? 0) / 1024 ** 3,
-      transferGb: Number(project.data_transfer_bytes ?? 0) / 1024 ** 3,
+      computeHours: typeof project.compute_time_seconds === 'number' ? Number(project.compute_time_seconds) / 3600 : null,
+      storageGbHours: typeof project.data_storage_bytes_hour === 'number' ? Number(project.data_storage_bytes_hour) / 1024 ** 3 : null,
+      transferGb: typeof project.data_transfer_bytes === 'number' ? Number(project.data_transfer_bytes) / 1024 ** 3 : null,
       updatedAt: project.updated_at,
     }))
     return NextResponse.json({

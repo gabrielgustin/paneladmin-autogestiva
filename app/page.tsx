@@ -3,10 +3,15 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Activity, ArrowUpRight, Database, RefreshCw, Server, Wallet } from 'lucide-react'
 
-type Project = { id: string; name: string; region: string; plan: string; computeHours: number; storageGbHours: number; transferGb: number }
+type Project = { id: string; name: string; region: string; plan: string; computeHours: number | null; storageGbHours: number | null; transferGb: number | null }
 type Data = { projects: Project[]; organizations: { id: string; name: string }[]; syncedAt: string }
 
 const number = new Intl.NumberFormat('es-ES', { maximumFractionDigits: 2 })
+const unavailable = 'No disponible'
+
+function usage(value: number | null, unit: string) {
+  return value === null ? unavailable : `${number.format(value)} ${unit}`
+}
 
 export default function Page() {
   const [data, setData] = useState<Data | null>(null)
@@ -21,7 +26,14 @@ export default function Page() {
   }
   useEffect(() => { load() }, [])
 
-  const totals = useMemo(() => data?.projects.reduce((a, p) => ({ compute: a.compute + p.computeHours, storage: a.storage + p.storageGbHours, transfer: a.transfer + p.transferGb }), { compute: 0, storage: 0, transfer: 0 }) ?? { compute: 0, storage: 0, transfer: 0 }, [data])
+  const totals = useMemo(() => {
+    const projects = data?.projects ?? []
+    const sum = (key: 'computeHours' | 'storageGbHours' | 'transferGb') => {
+      const values = projects.map((project) => project[key]).filter((value): value is number => value !== null)
+      return values.length ? values.reduce((total, value) => total + value, 0) : null
+    }
+    return { compute: sum('computeHours'), storage: sum('storageGbHours'), transfer: sum('transferGb') }
+  }, [data])
 
   return <main className="min-h-screen bg-brand text-brand-foreground">
     <div className="border-b border-brand-foreground/10 bg-brand">
@@ -38,13 +50,13 @@ export default function Page() {
       {error ? <div className="mt-8 rounded-lg border border-destructive/30 bg-destructive/10 p-4 text-sm text-destructive">{error}</div> : <>
         <section className="grid gap-4 border-b border-border pb-8 sm:grid-cols-2 lg:grid-cols-4">
           <Metric icon={<Wallet />} label="Proyectos" value={loading ? '—' : number.format(data?.projects.length ?? 0)} detail={`${data?.organizations.length ?? 0} organizaciones`} />
-          <Metric icon={<Activity />} label="Compute utilizado" value={loading ? '—' : `${number.format(totals.compute)} h`} detail="Periodo actual" />
-          <Metric icon={<Database />} label="Almacenamiento" value={loading ? '—' : `${number.format(totals.storage)} GB·h`} detail="Media acumulada" />
-          <Metric icon={<ArrowUpRight />} label="Transferencia" value={loading ? '—' : `${number.format(totals.transfer)} GB`} detail="Datos transferidos" />
+          <Metric icon={<Activity />} label="Compute utilizado" value={loading ? '—' : usage(totals.compute, 'h')} detail="Periodo actual" />
+          <Metric icon={<Database />} label="Almacenamiento" value={loading ? '—' : usage(totals.storage, 'GB·h')} detail="Media acumulada" />
+          <Metric icon={<ArrowUpRight />} label="Transferencia" value={loading ? '—' : usage(totals.transfer, 'GB')} detail="Datos transferidos" />
         </section>
         <section className="mt-8 overflow-hidden rounded-lg border border-resource-panel-border bg-resource-panel shadow-sm">
           <div className="flex flex-col gap-3 border-b border-resource-panel-border bg-resource-panel-header px-5 py-5 md:flex-row md:items-center md:justify-between"><div><div className="mb-2 flex items-center gap-2 text-[11px] font-bold uppercase tracking-[0.16em] text-orange"><span className="size-2 rounded-full bg-orange" />Panel de recursos</div><h2 className="text-lg font-bold tracking-tight text-brand-foreground">Todos los proyectos</h2><p className="mt-1 text-sm text-brand-foreground/70">Lectura en tiempo real desde la API de Neon</p></div><span className="rounded-full border border-orange/35 bg-orange/15 px-3 py-1 text-xs font-bold text-orange">{loading ? 'Cargando' : `${data?.projects.length ?? 0} activos`}</span></div>
-          <div className="divide-y divide-border">{loading ? [1,2,3].map(i => <div className="h-20 animate-pulse bg-muted/40" key={i} />) : data?.projects.map(project => <div className="flex flex-col gap-4 px-5 py-5 transition-colors hover:bg-secondary/30 md:flex-row md:items-center md:justify-between" key={project.id}><div className="flex items-center gap-4"><div className="flex size-10 items-center justify-center rounded-md border border-brand/20 bg-brand text-brand-foreground"><Server className="size-5" /></div><div><div className="font-semibold">{project.name}</div><div className="mt-1 text-xs text-muted-foreground">{project.region} · {project.plan}</div></div></div><div className="grid grid-cols-3 gap-6 text-right text-sm"><div><div className="font-semibold">{number.format(project.computeHours)} h</div><div className="text-xs text-muted-foreground">Compute</div></div><div><div className="font-semibold">{number.format(project.storageGbHours)} GB·h</div><div className="text-xs text-muted-foreground">Storage</div></div><div><div className="font-semibold">{number.format(project.transferGb)} GB</div><div className="text-xs text-muted-foreground">Transfer</div></div></div></div>)}</div>
+          <div className="divide-y divide-border">{loading ? [1,2,3].map(i => <div className="h-20 animate-pulse bg-muted/40" key={i} />) : data?.projects.map(project => <div className="flex flex-col gap-4 px-5 py-5 transition-colors hover:bg-secondary/30 md:flex-row md:items-center md:justify-between" key={project.id}><div className="flex items-center gap-4"><div className="flex size-10 items-center justify-center rounded-md border border-brand/20 bg-brand text-brand-foreground"><Server className="size-5" /></div><div><div className="font-semibold">{project.name}</div><div className="mt-1 text-xs text-muted-foreground">{project.region} · {project.plan}</div></div></div><div className="grid grid-cols-3 gap-6 text-right text-sm"><div><div className="font-semibold">{usage(project.computeHours, 'h')}</div><div className="text-xs text-muted-foreground">Compute</div></div><div><div className="font-semibold">{usage(project.storageGbHours, 'GB·h')}</div><div className="text-xs text-muted-foreground">Storage</div></div><div><div className="font-semibold">{usage(project.transferGb, 'GB')}</div><div className="text-xs text-muted-foreground">Transfer</div></div></div></div>)}</div>
         </section>
         <p className="mt-5 text-xs text-muted-foreground">{data?.syncedAt ? `Última sincronización: ${new Date(data.syncedAt).toLocaleString('es-ES')}` : 'Conectando con Neon...'}</p>
       </>}
