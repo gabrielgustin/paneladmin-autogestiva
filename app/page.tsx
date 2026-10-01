@@ -63,7 +63,7 @@ export default function Page() {
         <div className="max-w-3xl"><div className="mb-5 inline-flex items-center gap-2 rounded-full border border-brand-foreground/20 bg-brand-foreground/10 px-3 py-1.5 text-xs font-semibold text-brand-foreground"><span className="size-2 rounded-full bg-orange" />Monitoreo de cuenta</div><h1 className="max-w-2xl text-4xl font-black tracking-tight text-balance md:text-6xl">Tu infraestructura, <span className="text-orange">bajo control.</span></h1><p className="mt-5 max-w-xl text-base leading-7 text-brand-foreground/75">Una vista consolidada de todos tus proyectos Neon, recursos utilizados y actividad de tu cuenta.</p></div>
       </div>
     </div>
-    <div className="mx-auto max-w-7xl bg-brand px-4 py-6 text-brand-foreground md:px-6 md:py-8">
+    <div className="mx-auto max-w-7xl px-4 py-6 text-brand-foreground md:px-6 md:py-8">
       {error ? <div className="mt-8 rounded-lg border border-destructive/30 bg-destructive/10 p-4 text-sm text-destructive">{error}</div> : <>
         <section className="mb-6 flex flex-col gap-4 rounded-xl border border-brand-foreground/15 bg-brand-foreground/10 p-5 md:flex-row md:items-end md:justify-between">
           <div><div className="text-xs font-bold uppercase tracking-[0.16em] text-orange">Histórico mensual de cuenta</div><h2 className="mt-2 text-xl font-bold">Consumo de {month}</h2><p className="mt-1 text-sm text-brand-foreground/70">Suma de los registros diarios de todos tus proyectos Neon, incluyendo los proyectos sin actividad.</p></div>
