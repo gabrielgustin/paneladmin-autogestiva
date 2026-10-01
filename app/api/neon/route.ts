@@ -9,11 +9,18 @@ const RATES = {
   computePerCuHour: 0.106,
   storagePerGbMonth: 0.35,
   restorePerGbMonth: 0.2,
+  snapshotPerGbMonth: 0.09,
+  extraBranchPerMonth: 1.5,
+  freeChildBranches: 9,
   transferIncludedGb: 500,
   transferPerGb: 0.1,
 }
 const SPIKE_FACTOR = 2
 const SPIKE_MIN_USD = 0.5
+const BILLING_HOURS = 744
+const GB = 1_000_000_000
+const TRANSFER_WARN_RATIO = 0.8
+const DAILY_LIMIT_DAYS = 60
 
 type DayCost = { date: string; cost: number }
 type Usage = {
@@ -21,6 +28,9 @@ type Usage = {
   storage: number
   storageGbMonth: number
   restoreGbMonth: number
+  snapshotGbMonth: number
+  extraBranchMonths: number
+  maxChildBranches: number
   transfer: number
   days: Map<string, number>
 }
@@ -63,14 +73,17 @@ export async function GET(request: Request) {
     const planByProject = new Map<string, string>()
     const diagnostics: string[] = []
     const metrics =
-      'compute_unit_seconds,root_branch_bytes_month,child_branch_bytes_month,instant_restore_bytes_month,public_network_transfer_bytes,private_network_transfer_bytes'
+      'compute_unit_seconds,root_branch_bytes_month,child_branch_bytes_month,instant_restore_bytes_month,snapshot_storage_bytes_month,extra_branches_month,public_network_transfer_bytes'
+    const useDaily = monthStart.getTime() >= now.getTime() - DAILY_LIMIT_DAYS * 86_400_000
+    const granularity = useDaily ? 'daily' : 'monthly'
+    const bucketHours = useDaily ? 24 : daysInMonth * 24
 
     await Promise.all(
       orgIds.map(async (orgId) => {
         let cursor: string | undefined
         try {
           for (let page = 0; page < 20; page++) {
-            const query = new URLSearchParams({ org_id: orgId, from, to, granularity: 'daily', metrics, limit: '100' })
+            const query = new URLSearchParams({ org_id: orgId, from, to, granularity, metrics, limit: '100' })
             if (cursor) query.set('cursor', cursor)
             const history = await neon(`/consumption_history/v2/projects?${query.toString()}`, token)
             const rows = (history.projects ?? []) as {
@@ -87,6 +100,9 @@ export async function GET(request: Request) {
                 storage: 0,
                 storageGbMonth: 0,
                 restoreGbMonth: 0,
+                snapshotGbMonth: 0,
+                extraBranchMonths: 0,
+                maxChildBranches: 0,
                 transfer: 0,
                 days: new Map(),
               }
@@ -96,23 +112,37 @@ export async function GET(request: Request) {
                   let dayCompute = 0
                   let dayStorage = 0
                   let dayRestore = 0
+                  let daySnapshot = 0
+                  let dayBranchMonths = 0
+                  let dayStorageAvgGb = 0
                   for (const { metric_name, value } of day.metrics ?? []) {
                     const amount = Number(value ?? 0)
                     if (metric_name === 'compute_unit_seconds') dayCompute += amount / 3600
-                    else if (metric_name === 'root_branch_bytes_month' || metric_name === 'child_branch_bytes_month') dayStorage += amount / 1024 ** 3
-                    else if (metric_name === 'instant_restore_bytes_month') dayRestore += amount / 1024 ** 3
-                    else if (metric_name === 'public_network_transfer_bytes' || metric_name === 'private_network_transfer_bytes') current.transfer += amount / 1024 ** 3
+                    else if (metric_name === 'root_branch_bytes_month' || metric_name === 'child_branch_bytes_month') {
+                      dayStorage += amount / BILLING_HOURS / GB
+                      dayStorageAvgGb += amount / bucketHours / GB
+                    } else if (metric_name === 'instant_restore_bytes_month') dayRestore += amount / BILLING_HOURS / GB
+                    else if (metric_name === 'snapshot_storage_bytes_month') daySnapshot += amount / BILLING_HOURS / GB
+                    else if (metric_name === 'extra_branches_month') {
+                      const freeHours = RATES.freeChildBranches * bucketHours
+                      dayBranchMonths += Math.max(0, amount - freeHours) / BILLING_HOURS
+                      current.maxChildBranches = Math.max(current.maxChildBranches, amount / bucketHours)
+                    } else if (metric_name === 'public_network_transfer_bytes') current.transfer += amount / GB
                   }
                   current.compute += dayCompute
                   current.storageGbMonth += dayStorage
                   current.restoreGbMonth += dayRestore
-                  if (dayStorage > 0) current.storage = dayStorage
+                  current.snapshotGbMonth += daySnapshot
+                  current.extraBranchMonths += dayBranchMonths
+                  if (dayStorageAvgGb > 0) current.storage = dayStorageAvgGb
                   const date = (day.timeframe_start ?? '').slice(0, 10)
-                  if (date) {
+                  if (date && useDaily) {
                     const dayCost =
                       dayCompute * RATES.computePerCuHour +
                       dayStorage * RATES.storagePerGbMonth +
-                      dayRestore * RATES.restorePerGbMonth
+                      dayRestore * RATES.restorePerGbMonth +
+                      daySnapshot * RATES.snapshotPerGbMonth +
+                      dayBranchMonths * RATES.extraBranchPerMonth
                     current.days.set(date, (current.days.get(date) ?? 0) + dayCost)
                   }
                 }
@@ -136,8 +166,23 @@ export async function GET(request: Request) {
       const compute = usage ? usage.compute * RATES.computePerCuHour : 0
       const storage = usage ? usage.storageGbMonth * RATES.storagePerGbMonth : 0
       const restore = usage ? usage.restoreGbMonth * RATES.restorePerGbMonth : 0
+      const snapshots = usage ? usage.snapshotGbMonth * RATES.snapshotPerGbMonth : 0
+      const branches = usage ? usage.extraBranchMonths * RATES.extraBranchPerMonth : 0
       const transfer = usage ? Math.max(0, usage.transfer - RATES.transferIncludedGb) * RATES.transferPerGb : 0
-      const total = compute + storage + restore + transfer
+      const total = compute + storage + restore + snapshots + branches + transfer
+      const alerts: { type: 'transfer' | 'branches'; message: string }[] = []
+      if (usage && usage.transfer >= RATES.transferIncludedGb * TRANSFER_WARN_RATIO) {
+        alerts.push({
+          type: 'transfer',
+          message: `Transferencia pública en ${round(usage.transfer)} GB de ${RATES.transferIncludedGb} GB incluidos`,
+        })
+      }
+      if (usage && usage.maxChildBranches > RATES.freeChildBranches) {
+        alerts.push({
+          type: 'branches',
+          message: `${Math.ceil(usage.maxChildBranches)} branches hijos (incluidos: ${RATES.freeChildBranches})`,
+        })
+      }
       const dailyCosts: DayCost[] = usage
         ? [...usage.days.entries()].sort(([a], [b]) => a.localeCompare(b)).map(([date, cost]) => ({ date, cost: round(cost) }))
         : []
@@ -160,7 +205,16 @@ export async function GET(request: Request) {
         storageGbHours: usage ? usage.storage : null,
         transferGb: usage ? usage.transfer : null,
         storageBytes: typeof project.synthetic_storage_size === 'number' ? project.synthetic_storage_size : null,
-        cost: { compute: round(compute), storage: round(storage), restore: round(restore), transfer: round(transfer), total: round(total) },
+        cost: {
+          compute: round(compute),
+          storage: round(storage),
+          restore: round(restore),
+          snapshots: round(snapshots),
+          branches: round(branches),
+          transfer: round(transfer),
+          total: round(total),
+        },
+        alerts,
         projectedTotal: round((total / elapsedDays) * daysInMonth),
         dailyCosts,
         spike,
