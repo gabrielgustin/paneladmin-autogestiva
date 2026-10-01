@@ -24,40 +24,54 @@ export async function GET() {
     const orgIds = [...new Set(rawProjects.map((project) => project.org_id).filter((id): id is string => typeof id === 'string'))]
     const now = new Date()
     const monthStart = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1))
-    // Neon rejects a zero-length range on the first day of a month.
-    const from = (now.getTime() > monthStart.getTime()
+    // Neon truncates dates to the day, so on the 1st of a month the current-month range collapses to zero length.
+    const startOfToday = Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate())
+    const from = (startOfToday > monthStart.getTime()
       ? monthStart
       : new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() - 1, 1))).toISOString()
     const to = now.toISOString()
     const usageByProject = new Map<string, { compute: number; storage: number; transfer: number }>()
 
+    const planByProject = new Map<string, string>()
+    const diagnostics: string[] = []
+    const metrics = 'compute_unit_seconds,root_branch_bytes_month,child_branch_bytes_month,public_network_transfer_bytes,private_network_transfer_bytes'
+
     await Promise.all(orgIds.map(async (orgId) => {
-      const baseQuery = { org_id: orgId, from, to, granularity: 'daily' }
+      let cursor: string | undefined
       try {
-        const metrics = ['compute_unit_seconds', 'root_branch_bytes_month', 'public_network_transfer_bytes', 'private_network_transfer_bytes']
-        const histories = await Promise.all(metrics.map(async (metric) => {
-          const query = new URLSearchParams({ ...baseQuery, metrics: metric })
-          try {
-            return await neon(`/consumption_history/v2/projects?${query.toString()}`, token)
-          } catch (error) {
-            console.error(`[v0] Neon metric ${metric} unavailable:`, error)
-            return null
+        for (let page = 0; page < 20; page++) {
+          const query = new URLSearchParams({ org_id: orgId, from, to, granularity: 'daily', metrics, limit: '100' })
+          if (cursor) query.set('cursor', cursor)
+          const history = await neon(`/consumption_history/v2/projects?${query.toString()}`, token)
+          const rows = (history.projects ?? []) as {
+            project_id?: string
+            periods?: { period_plan?: string; consumption?: { metrics?: { metric_name: string; value: number }[] }[] }[]
+          }[]
+          for (const row of rows) {
+            if (!row.project_id) continue
+            const current = usageByProject.get(row.project_id) ?? { compute: 0, storage: 0, transfer: 0 }
+            for (const period of row.periods ?? []) {
+              if (period.period_plan) planByProject.set(row.project_id, period.period_plan)
+              for (const day of period.consumption ?? []) {
+                let dayStorage = 0
+                for (const { metric_name, value } of day.metrics ?? []) {
+                  const amount = Number(value ?? 0)
+                  if (metric_name === 'compute_unit_seconds') current.compute += amount / 3600
+                  else if (metric_name === 'root_branch_bytes_month' || metric_name === 'child_branch_bytes_month') dayStorage += amount / 1024 ** 3
+                  else if (metric_name === 'public_network_transfer_bytes' || metric_name === 'private_network_transfer_bytes') current.transfer += amount / 1024 ** 3
+                }
+                if (dayStorage > 0) current.storage = dayStorage
+              }
+            }
+            usageByProject.set(row.project_id, current)
           }
-        }))
-        for (const history of histories) {
-          const rows = Array.isArray(history) ? history : history?.projects ?? history?.data ?? []
-          for (const row of rows as Record<string, unknown>[]) {
-            const projectId = String(row.project_id ?? row.projectId ?? '')
-            if (!projectId) continue
-            const current = usageByProject.get(projectId) ?? { compute: 0, storage: 0, transfer: 0 }
-            current.compute += Number(row.compute_unit_seconds ?? 0) / 3600
-            current.storage += (Number(row.root_branch_bytes_month ?? 0) + Number(row.child_branch_bytes_month ?? 0)) / 1024 ** 3
-            current.transfer += (Number(row.public_network_transfer_bytes ?? 0) + Number(row.private_network_transfer_bytes ?? 0)) / 1024 ** 3
-            usageByProject.set(projectId, current)
-          }
+          cursor = history.pagination?.cursor
+          if (!cursor || rows.length === 0) break
         }
       } catch (error) {
-        console.error('[v0] Neon consumption history error:', error)
+        const message = error instanceof Error ? error.message : String(error)
+        diagnostics.push(`${orgId}: ${message}`)
+        console.error('[v0] Neon consumption history error:', message)
       }
     }))
 
@@ -66,7 +80,7 @@ export async function GET() {
       orgId: project.org_id,
       name: project.name,
       region: project.region_id,
-      plan: (project.owner as Record<string, unknown> | undefined)?.subscription_type ?? 'unknown',
+      plan: planByProject.get(String(project.id)) ?? (project.owner as Record<string, unknown> | undefined)?.subscription_type ?? 'unknown',
       computeHours: usageByProject.get(String(project.id))?.compute ?? null,
       storageGbHours: usageByProject.get(String(project.id))?.storage ?? null,
       transferGb: usageByProject.get(String(project.id))?.transfer ?? null,
@@ -76,6 +90,7 @@ export async function GET() {
       organizations: [...new Set(projects.map((project: { orgId?: string }) => project.orgId).filter(Boolean))].map((id) => ({ id })),
       projects,
       period: projectsResponse.projects?.[0]?.consumption_period_end ? { end: projectsResponse.projects[0].consumption_period_end } : null,
+      diagnostics,
       syncedAt: new Date().toISOString(),
     })
   } catch (error) {

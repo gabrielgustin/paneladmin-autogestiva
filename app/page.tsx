@@ -10,7 +10,10 @@ const number = new Intl.NumberFormat('es-ES', { maximumFractionDigits: 2 })
 const unavailable = 'No disponible'
 
 function usage(value: number | null, unit: string) {
-  return value === null ? unavailable : `${number.format(value)} ${unit}`
+  if (value === null) return unavailable
+  if (unit === 'GB·h') return value < 1 ? `${number.format(value * 1024)} MB` : `${number.format(value)} GB`
+  if (unit === 'GB' && value > 0 && value < 0.01) return `${number.format(value * 1024)} MB`
+  return `${number.format(value)} ${unit}`
 }
 
 export default function Page() {
