@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { Activity, ArrowUpRight, Database, RefreshCw, Server, Wallet } from 'lucide-react'
 
 type Project = { id: string; name: string; region: string; plan: string; computeHours: number | null; storageGbHours: number | null; transferGb: number | null }
-type Data = { projects: Project[]; organizations: { id: string; name: string }[]; syncedAt: string }
+type Data = { projects: Project[]; organizations: { id: string; name: string }[]; period?: { month?: string; from?: string; to?: string } | null; diagnostics?: string[]; syncedAt: string }
 
 const number = new Intl.NumberFormat('es-ES', { maximumFractionDigits: 2 })
 const unavailable = 'No disponible'
@@ -17,13 +17,15 @@ function usage(value: number | null, unit: string) {
 }
 
 export default function Page() {
+  const currentMonth = new Date().toISOString().slice(0, 7)
+  const [month, setMonth] = useState(currentMonth)
   const [data, setData] = useState<Data | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
 
-  async function load() {
+  async function load(selectedMonth = month) {
     setLoading(true); setError('')
-    try { const response = await fetch('/api/neon'); if (!response.ok) throw new Error(); setData(await response.json()) }
+    try { const response = await fetch(`/api/neon?month=${selectedMonth}`); if (!response.ok) throw new Error(); setData(await response.json()) }
     catch { setError('No se pudieron sincronizar los proyectos. Revisa la conexión de Neon.') }
     finally { setLoading(false) }
   }
@@ -51,11 +53,15 @@ export default function Page() {
     </div>
     <div className="mx-auto max-w-7xl bg-brand px-4 py-6 text-brand-foreground md:px-6 md:py-8">
       {error ? <div className="mt-8 rounded-lg border border-destructive/30 bg-destructive/10 p-4 text-sm text-destructive">{error}</div> : <>
+        <section className="mb-6 flex flex-col gap-4 rounded-xl border border-brand-foreground/15 bg-brand-foreground/10 p-5 md:flex-row md:items-end md:justify-between">
+          <div><div className="text-xs font-bold uppercase tracking-[0.16em] text-orange">Histórico mensual de cuenta</div><h2 className="mt-2 text-xl font-bold">Consumo de {month}</h2><p className="mt-1 text-sm text-brand-foreground/70">Suma de los registros diarios de todos tus proyectos Neon, incluyendo los proyectos sin actividad.</p></div>
+          <div className="flex items-end gap-3"><label className="text-xs font-semibold text-brand-foreground/70"><span className="mb-2 block">Mes a consultar</span><input type="month" value={month} max={currentMonth} onChange={(event) => setMonth(event.target.value)} className="h-10 rounded-lg border border-brand-foreground/20 bg-brand px-3 text-sm text-brand-foreground outline-none focus:border-orange" /></label><button onClick={() => load()} disabled={loading} className="h-10 rounded-lg bg-orange px-4 text-sm font-bold text-orange-foreground disabled:opacity-50">Consultar</button></div>
+        </section>
         <section className="grid gap-4 border-b border-border pb-8 sm:grid-cols-2 lg:grid-cols-4">
           <Metric icon={<Wallet />} label="Proyectos" value={loading ? '—' : number.format(data?.projects.length ?? 0)} detail={`${data?.organizations.length ?? 0} organizaciones`} />
-          <Metric icon={<Activity />} label="Compute utilizado" value={loading ? '—' : usage(totals.compute, 'h')} detail="Periodo actual" />
-          <Metric icon={<Database />} label="Almacenamiento" value={loading ? '—' : usage(totals.storage, 'GB·h')} detail="Media acumulada" />
-          <Metric icon={<ArrowUpRight />} label="Transferencia" value={loading ? '—' : usage(totals.transfer, 'GB')} detail="Datos transferidos" />
+          <Metric icon={<Activity />} label="Compute utilizado" value={loading ? '—' : usage(totals.compute, 'h')} detail={`Total mensual · ${month}`} />
+          <Metric icon={<Database />} label="Almacenamiento" value={loading ? '—' : usage(totals.storage, 'GB·h')} detail="Registros del mes" />
+          <Metric icon={<ArrowUpRight />} label="Transferencia" value={loading ? '—' : usage(totals.transfer, 'GB')} detail="Total mensual" />
         </section>
         <section className="mt-8 overflow-hidden rounded-lg border border-resource-panel-border bg-resource-panel shadow-sm">
           <div className="flex flex-col gap-3 border-b border-resource-panel-border bg-resource-panel-header px-5 py-5 md:flex-row md:items-center md:justify-between"><div><div className="mb-2 flex items-center gap-2 text-[11px] font-bold uppercase tracking-[0.16em] text-orange"><span className="size-2 rounded-full bg-orange" />Panel de recursos</div><h2 className="text-lg font-bold tracking-tight text-brand-foreground">Todos los proyectos</h2><p className="mt-1 text-sm text-brand-foreground/70">Lectura en tiempo real desde la API de Neon</p></div><span className="rounded-full border border-orange/35 bg-orange/15 px-3 py-1 text-xs font-bold text-orange">{loading ? 'Cargando' : `${data?.projects.length ?? 0} activos`}</span></div>

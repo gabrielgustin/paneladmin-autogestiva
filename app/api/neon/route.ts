@@ -16,20 +16,23 @@ async function neon(path: string, token: string) {
   return response.json()
 }
 
-export async function GET() {
+export async function GET(request: Request) {
   try {
     const token = await getToken(CONNECTOR, { subject: { type: 'app' } })
+    const requestedMonth = new URL(request.url).searchParams.get('month')
+    const monthMatch = requestedMonth?.match(/^(\d{4})-(\d{2})$/)
+    const now = new Date()
+    const year = monthMatch ? Number(monthMatch[1]) : now.getUTCFullYear()
+    const month = monthMatch ? Number(monthMatch[2]) - 1 : now.getUTCMonth()
+    const monthStart = new Date(Date.UTC(year, month, 1))
+    const nextMonthStart = new Date(Date.UTC(year, month + 1, 1))
+    const selectedMonth = `${year}-${String(month + 1).padStart(2, '0')}`
     const projectsResponse = await neon('/projects', token)
     const rawProjects = (projectsResponse.projects ?? []) as Record<string, unknown>[]
     const orgIds = [...new Set(rawProjects.map((project) => project.org_id).filter((id): id is string => typeof id === 'string'))]
-    const now = new Date()
-    const monthStart = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1))
-    // Neon truncates dates to the day, so on the 1st of a month the current-month range collapses to zero length.
-    const startOfToday = Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate())
-    const from = (startOfToday > monthStart.getTime()
-      ? monthStart
-      : new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() - 1, 1))).toISOString()
-    const to = now.toISOString()
+    // Neon returns daily records; querying the complete calendar month lets the UI show a true monthly total.
+    const from = monthStart.toISOString()
+    const to = nextMonthStart.toISOString()
     const usageByProject = new Map<string, { compute: number; storage: number; transfer: number }>()
 
     const planByProject = new Map<string, string>()
@@ -89,7 +92,7 @@ export async function GET() {
     return NextResponse.json({
       organizations: [...new Set(projects.map((project: { orgId?: string }) => project.orgId).filter(Boolean))].map((id) => ({ id })),
       projects,
-      period: projectsResponse.projects?.[0]?.consumption_period_end ? { end: projectsResponse.projects[0].consumption_period_end } : null,
+      period: { month: selectedMonth, from, to },
       diagnostics,
       syncedAt: new Date().toISOString(),
     })
