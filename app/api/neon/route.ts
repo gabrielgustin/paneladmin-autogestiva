@@ -159,6 +159,7 @@ export async function GET(request: Request) {
         computeHours: usage ? usage.compute : null,
         storageGbHours: usage ? usage.storage : null,
         transferGb: usage ? usage.transfer : null,
+        storageBytes: typeof project.synthetic_storage_size === 'number' ? project.synthetic_storage_size : null,
         cost: { compute: round(compute), storage: round(storage), restore: round(restore), transfer: round(transfer), total: round(total) },
         projectedTotal: round((total / elapsedDays) * daysInMonth),
         dailyCosts,

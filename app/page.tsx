@@ -5,17 +5,25 @@ import { Activity, ArrowUpRight, Database, RefreshCw, Server, Wallet } from 'luc
 
 type Cost = { compute: number; storage: number; restore: number; transfer: number; total: number }
 type Spike = { date: string; cost: number; average: number }
-type Project = { id: string; name: string; region: string; plan: string; computeHours: number | null; storageGbHours: number | null; transferGb: number | null; cost: Cost; projectedTotal: number; spike: Spike | null }
+type Project = { id: string; name: string; region: string; plan: string; computeHours: number | null; storageGbHours: number | null; transferGb: number | null; storageBytes: number | null; cost: Cost; projectedTotal: number; spike: Spike | null }
 type Data = { projects: Project[]; organizations: { id: string; name: string }[]; cost: { total: number; projected: number; elapsedDays: number; daysInMonth: number }; period?: { month?: string; from?: string; to?: string } | null; diagnostics?: string[]; syncedAt: string }
 
 const number = new Intl.NumberFormat('es-ES', { maximumFractionDigits: 2 })
 const money = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', minimumFractionDigits: 2 })
 const unavailable = 'No disponible'
 
+function formatBytes(bytes: number | null) {
+  if (bytes === null) return unavailable
+  const units = ['B', 'KB', 'MB', 'GB', 'TB']
+  let value = bytes
+  let index = 0
+  while (value >= 1024 && index < units.length - 1) { value /= 1024; index++ }
+  return `${number.format(value)} ${units[index]}`
+}
+
 function usage(value: number | null, unit: string) {
   if (value === null) return unavailable
-  if (unit === 'GB·h') return value < 1 ? `${number.format(value * 1024)} MB` : `${number.format(value)} GB`
-  if (unit === 'GB' && value > 0 && value < 0.01) return `${number.format(value * 1024)} MB`
+  if (unit === 'GB') return formatBytes(value * 1024 ** 3)
   return `${number.format(value)} ${unit}`
 }
 
@@ -36,11 +44,11 @@ export default function Page() {
 
   const totals = useMemo(() => {
     const projects = data?.projects ?? []
-    const sum = (key: 'computeHours' | 'storageGbHours' | 'transferGb') => {
+    const sum = (key: 'computeHours' | 'storageBytes' | 'transferGb') => {
       const values = projects.map((project) => project[key]).filter((value): value is number => value !== null)
       return values.length ? values.reduce((total, value) => total + value, 0) : null
     }
-    return { compute: sum('computeHours'), storage: sum('storageGbHours'), transfer: sum('transferGb') }
+    return { compute: sum('computeHours'), storage: sum('storageBytes'), transfer: sum('transferGb') }
   }, [data])
 
   const sortedProjects = useMemo(() => [...(data?.projects ?? [])].sort((a, b) => b.cost.total - a.cost.total), [data])
@@ -76,12 +84,12 @@ export default function Page() {
         <section className="grid gap-4 border-b border-border pb-8 sm:grid-cols-2 lg:grid-cols-4">
           <Metric icon={<Wallet />} label="Proyectos" value={loading ? '—' : number.format(data?.projects.length ?? 0)} detail={`${data?.organizations.length ?? 0} organizaciones`} />
           <Metric icon={<Activity />} label="Compute utilizado" value={loading ? '—' : usage(totals.compute, 'h')} detail={`Total mensual · ${month}`} />
-          <Metric icon={<Database />} label="Almacenamiento" value={loading ? '—' : usage(totals.storage, 'GB·h')} detail="Registros del mes" />
+          <Metric icon={<Database />} label="Almacenamiento" value={loading ? '—' : formatBytes(totals.storage)} detail="Tamaño actual de todos los proyectos" />
           <Metric icon={<ArrowUpRight />} label="Transferencia" value={loading ? '—' : usage(totals.transfer, 'GB')} detail="Total mensual" />
         </section>
         <section className="mt-8 overflow-hidden rounded-lg border border-resource-panel-border bg-resource-panel shadow-sm">
           <div className="flex flex-col gap-3 border-b border-resource-panel-border bg-resource-panel-header px-5 py-5 md:flex-row md:items-center md:justify-between"><div><div className="mb-2 flex items-center gap-2 text-[11px] font-bold uppercase tracking-[0.16em] text-orange"><span className="size-2 rounded-full bg-orange" />Panel de recursos</div><h2 className="text-lg font-bold tracking-tight text-brand-foreground">Todos los proyectos</h2><p className="mt-1 text-sm text-brand-foreground/70">Lectura en tiempo real desde la API de Neon</p></div><span className="rounded-full border border-orange/35 bg-orange/15 px-3 py-1 text-xs font-bold text-orange">{loading ? 'Cargando' : `${data?.projects.length ?? 0} activos`}</span></div>
-          <div className="divide-y divide-border">{loading ? [1,2,3].map(i => <div className="h-20 animate-pulse bg-muted/40" key={i} />) : sortedProjects.map(project => <div className="flex flex-col gap-4 px-5 py-5 transition-colors hover:bg-secondary/30 md:flex-row md:items-center md:justify-between" key={project.id}><div className="flex items-center gap-4"><div className="flex size-10 items-center justify-center rounded-md border border-brand/20 bg-brand text-brand-foreground"><Server className="size-5" /></div><div><div className="flex items-center gap-2 font-semibold">{project.name}{project.spike && <span className="rounded-full bg-orange px-2 py-0.5 text-[10px] font-bold uppercase text-orange-foreground">Pico</span>}</div><div className="mt-1 text-xs text-muted-foreground">{project.region} · {project.plan}</div></div></div><div className="grid grid-cols-2 gap-6 text-right text-sm sm:grid-cols-5"><div><div className="font-bold text-orange">{money.format(project.cost.total)}</div><div className="text-xs text-muted-foreground">Gasto · proy. {money.format(project.projectedTotal)}</div></div><div><div className="font-semibold">{usage(project.computeHours, 'h')}</div><div className="text-xs text-muted-foreground">Compute</div></div><div><div className="font-semibold">{usage(project.storageGbHours, 'GB·h')}</div><div className="text-xs text-muted-foreground">Storage</div></div><div><div className="font-semibold">{usage(project.transferGb, 'GB')}</div><div className="text-xs text-muted-foreground">Transfer</div></div></div></div>)}</div>
+          <div className="divide-y divide-border">{loading ? [1,2,3].map(i => <div className="h-20 animate-pulse bg-muted/40" key={i} />) : sortedProjects.map(project => <div className="flex flex-col gap-4 px-5 py-5 transition-colors hover:bg-secondary/30 md:flex-row md:items-center md:justify-between" key={project.id}><div className="flex items-center gap-4"><div className="flex size-10 items-center justify-center rounded-md border border-brand/20 bg-brand text-brand-foreground"><Server className="size-5" /></div><div><div className="flex items-center gap-2 font-semibold">{project.name}{project.spike && <span className="rounded-full bg-orange px-2 py-0.5 text-[10px] font-bold uppercase text-orange-foreground">Pico</span>}</div><div className="mt-1 text-xs text-muted-foreground">{project.region} · {project.plan}</div></div></div><div className="grid grid-cols-2 gap-6 text-right text-sm sm:grid-cols-5"><div><div className="font-bold text-orange">{money.format(project.cost.total)}</div><div className="text-xs text-muted-foreground">Gasto · proy. {money.format(project.projectedTotal)}</div></div><div><div className="font-semibold">{usage(project.computeHours, 'h')}</div><div className="text-xs text-muted-foreground">Compute</div></div><div><div className="font-semibold">{formatBytes(project.storageBytes)}</div><div className="text-xs text-muted-foreground">Storage</div></div><div><div className="font-semibold">{usage(project.transferGb, 'GB')}</div><div className="text-xs text-muted-foreground">Transfer</div></div></div></div>)}</div>
         </section>
         <p className="mt-5 text-xs text-muted-foreground">{data?.syncedAt ? `Última sincronización: ${new Date(data.syncedAt).toLocaleString('es-ES')}` : 'Conectando con Neon...'}</p>
       </>}
