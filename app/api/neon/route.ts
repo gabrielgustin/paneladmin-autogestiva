@@ -30,7 +30,7 @@ export async function GET() {
         from,
         to,
         granularity: 'daily',
-        metrics: 'compute_unit_seconds,root_branch_bytes_month,child_branch_bytes_month,public_network_transfer_bytes,private_network_transfer_bytes',
+        metrics: 'compute_unit_seconds,root_branch_bytes_month',
       })
       try {
         const history = await neon(`/consumption_history/v2/projects?${query.toString()}`, token)
