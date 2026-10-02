@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useMemo, useState } from 'react'
+import Link from 'next/link'
 import { Activity, ArrowUpRight, Database, RefreshCw, Server, Wallet } from 'lucide-react'
 
 type Cost = { compute: number; storage: number; restore: number; snapshots: number; branches: number; transfer: number; total: number }
@@ -59,8 +60,8 @@ export default function Page() {
   return <main className="min-h-screen bg-brand text-brand-foreground" style={{ backgroundImage: 'linear-gradient(rgba(255,255,255,.055) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,.055) 1px, transparent 1px)', backgroundSize: '42px 42px' }}>
     <div className="relative overflow-hidden bg-transparent text-brand-foreground">
       <div className="relative mx-auto max-w-7xl px-6 py-12 md:px-10 md:py-16">
-        <button onClick={load} className="absolute right-6 top-12 inline-flex h-10 items-center justify-center gap-2 rounded-full bg-orange px-5 text-sm font-semibold text-orange-foreground shadow-sm transition-transform hover:-translate-y-0.5 disabled:opacity-50 md:right-10 md:top-16" disabled={loading}><RefreshCw className={loading ? 'size-4 animate-spin' : 'size-4'} />{loading ? 'Sincronizando' : 'Actualizar'}</button>
-        <div className="max-w-3xl"><h1 className="max-w-2xl text-4xl font-black tracking-tight text-balance md:text-6xl">Panel Administrador</h1></div>
+        <button onClick={() => load()} className="absolute right-6 top-12 inline-flex h-10 items-center justify-center gap-2 rounded-full bg-orange px-5 text-sm font-semibold text-orange-foreground shadow-sm transition-transform hover:-translate-y-0.5 disabled:opacity-50 md:right-10 md:top-16" disabled={loading}><RefreshCw className={loading ? 'size-4 animate-spin' : 'size-4'} />{loading ? 'Sincronizando' : 'Actualizar'}</button>
+        <div className="max-w-3xl"><div className="mb-5 flex flex-wrap items-center gap-3"><span className="rounded-full border border-brand-foreground/20 bg-brand-foreground/10 px-3 py-1.5 text-xs font-semibold text-brand-foreground">Infraestructura</span><Link href="/clientes" className="rounded-full border border-orange/40 bg-orange/10 px-3 py-1.5 text-xs font-bold text-orange hover:bg-orange/20">Dashboard de clientes</Link></div><h1 className="max-w-2xl text-4xl font-black tracking-tight text-balance md:text-6xl">Panel Administrador</h1></div>
       </div>
     </div>
     <div className="mx-auto max-w-7xl px-4 py-6 text-brand-foreground md:px-6 md:py-8">
