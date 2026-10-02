@@ -54,6 +54,7 @@ export default function Page() {
   }, [data])
 
   const sortedProjects = useMemo(() => [...(data?.projects ?? [])].sort((a, b) => b.cost.total - a.cost.total), [data])
+  const managedProject = useMemo(() => sortedProjects.find((project) => project.name.toLowerCase().includes('clientes-neon')), [sortedProjects])
   const spikes = sortedProjects.filter((project) => project.spike)
   const limitAlerts = sortedProjects.flatMap((project) => project.alerts.map((alert) => ({ ...alert, project: project.name, id: `${project.id}-${alert.type}` })))
 
@@ -82,6 +83,18 @@ export default function Page() {
           <div className="text-xs font-bold uppercase tracking-[0.16em] text-orange">Alerta de costos · {spikes.length} {spikes.length === 1 ? 'proyecto' : 'proyectos'} con pico</div>
           <ul className="mt-3 flex flex-col gap-2 text-sm">{spikes.map(project => <li key={project.id}><span className="font-semibold">{project.name}</span>: {money.format(project.spike!.cost)} el {project.spike!.date}, contra un promedio diario de {money.format(project.spike!.average)}.</li>)}</ul>
         </section>}
+        <section className="mb-6 overflow-hidden rounded-xl border border-orange/35 bg-orange/10 p-5">
+          <div className="flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
+            <div><div className="text-[11px] font-bold uppercase tracking-[0.16em] text-orange">Base de datos administrada</div><h2 className="mt-2 text-xl font-bold">clientes-neon</h2><p className="mt-1 text-sm text-brand-foreground/70">Consumo real del proyecto Neon asociado a esta base de datos.</p></div>
+            {managedProject ? <div className="grid grid-cols-2 gap-x-8 gap-y-4 sm:grid-cols-4 lg:min-w-[620px]">
+              <UsageStat label="Gasto" value={money.format(managedProject.cost.total)} detail={`Proy. ${money.format(managedProject.projectedTotal)}`} />
+              <UsageStat label="Compute" value={usage(managedProject.computeHours, 'h')} detail="Horas consumidas" />
+              <UsageStat label="Storage" value={formatBytes(managedProject.storageBytes)} detail="Tamaño actual" />
+              <UsageStat label="Transferencia" value={usage(managedProject.transferGb, 'GB')} detail="Transferencia pública" />
+            </div> : <div className="rounded-lg border border-brand-foreground/15 bg-brand-foreground/10 px-4 py-3 text-sm text-brand-foreground/70">No se encontró un proyecto llamado clientes-neon.</div>}
+          </div>
+          {managedProject?.alerts.length ? <div className="mt-5 border-t border-orange/25 pt-4 text-sm text-orange">{managedProject.alerts.map((alert) => <div key={alert.type}>{alert.message}</div>)}</div> : null}
+        </section>
         <section className="grid gap-4 border-b border-border pb-8 sm:grid-cols-2 lg:grid-cols-4">
           <Metric icon={<Wallet />} label="Proyectos" value={loading ? '—' : number.format(data?.projects.length ?? 0)} detail={`${data?.organizations.length ?? 0} organizaciones`} />
           <Metric icon={<Activity />} label="Compute utilizado" value={loading ? '—' : usage(totals.compute, 'h')} detail={`Total mensual · ${month}`} />
@@ -99,3 +112,4 @@ export default function Page() {
 }
 
 function Metric({ icon, label, value, detail }: { icon: React.ReactNode; label: string; value: string; detail: string }) { return <div className="rounded-xl border border-brand-foreground/15 bg-brand-foreground/10 p-5 shadow-sm"><div className="mb-5 flex size-9 items-center justify-center rounded-lg bg-brand text-brand-foreground">{icon}</div><div className="text-sm text-muted-foreground">{label}</div><div className="mt-1 text-2xl font-semibold tracking-tight">{value}</div><div className="mt-2 text-xs text-muted-foreground">{detail}</div></div> }
+function UsageStat({ label, value, detail }: { label: string; value: string; detail: string }) { return <div><div className="text-xs font-semibold uppercase tracking-[0.12em] text-brand-foreground/60">{label}</div><div className="mt-1 text-lg font-bold text-brand-foreground">{value}</div><div className="mt-1 text-[11px] text-brand-foreground/55">{detail}</div></div> }
