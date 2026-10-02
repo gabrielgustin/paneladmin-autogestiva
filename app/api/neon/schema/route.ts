@@ -54,8 +54,9 @@ export async function GET(request: NextRequest) {
     const databases = await neon(`/projects/${encodeURIComponent(projectId)}/branches/${encodeURIComponent(branch.id)}/databases`, token)
     const database = databases.databases?.[0]
     if (!database?.name) return NextResponse.json({ projectId, name: project.name ?? projectId, branch: branch.name ?? branch.id, tables: [] })
-    const schema = await neon(`/projects/${encodeURIComponent(projectId)}/branches/${encodeURIComponent(branch.id)}/schema?db_name=${encodeURIComponent(database.name)}&format=json`, token)
-    const tables = typeof schema === 'string' ? parseSqlTables(schema) : normalizeTables(schema)
+    const schema = await neon(`/projects/${encodeURIComponent(projectId)}/branches/${encodeURIComponent(branch.id)}/schema?db_name=${encodeURIComponent(database.name)}`, token)
+    const sqlDump = typeof schema === 'string' ? schema : typeof schema?.sql === 'string' ? schema.sql : null
+    const tables = sqlDump !== null ? parseSqlTables(sqlDump) : normalizeTables(schema)
     return NextResponse.json({ projectId, name: project.name ?? projectId, branch: branch.name ?? branch.id, database: database.name, tables }, { headers: { 'Cache-Control': 'private, max-age=60' } })
   } catch (error) {
     console.error('[v0] Neon schema lookup error:', error)
