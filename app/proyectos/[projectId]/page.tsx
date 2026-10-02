@@ -30,6 +30,7 @@ export default function ProjectPage() {
     schema: table.schema ?? 'public',
     columns: table.columns ?? [],
   }))
+  const publicTables = tables.filter((table) => table.schema === 'public')
 
   return (
     <main
@@ -50,7 +51,7 @@ export default function ProjectPage() {
             </div>
             <h1 className="mt-3 text-4xl font-black tracking-tight">{data?.name ?? 'Cargando…'}</h1>
             <p className="mt-2 text-sm text-brand-foreground/60">
-              Base: {data?.database ?? '—'} · Branch: {data?.branch ?? '—'} · {tables.length} tablas
+              Base: {data?.database ?? '—'} · Branch: {data?.branch ?? '—'} · {publicTables.length} tablas públicas
             </p>
           </div>
           <button onClick={() => mutate()} disabled={isValidating} className="inline-flex h-10 items-center justify-center gap-2 rounded-full bg-orange px-5 text-sm font-bold text-orange-foreground disabled:opacity-50">
@@ -66,14 +67,14 @@ export default function ProjectPage() {
         ) : (
           <>
             <h2 className="mt-8 mb-3 text-xs font-bold tracking-[0.16em] text-brand-foreground/60 uppercase">Registros</h2>
-            <DataGrid key={params.projectId + tables.length} projectId={params.projectId} tables={tables.map(({ name, schema }) => ({ name, schema }))} />
+            <DataGrid key={params.projectId + publicTables.length} projectId={params.projectId} tables={publicTables.map(({ name, schema }) => ({ name, schema }))} />
 
             <h2 className="mt-10 mb-3 text-xs font-bold tracking-[0.16em] text-brand-foreground/60 uppercase">Estructura</h2>
-            {tables.length === 0 ? (
-              <p className="rounded-xl border border-brand-foreground/15 p-6 text-sm text-brand-foreground/60">No se encontraron tablas en este esquema.</p>
+            {publicTables.length === 0 ? (
+              <p className="rounded-xl border border-brand-foreground/15 p-6 text-sm text-brand-foreground/60">No se encontraron tablas públicas en este esquema.</p>
             ) : (
               <section className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-                {tables.map((table) => (
+                {publicTables.map((table) => (
                   <article key={`${table.schema}.${table.name}`} className="rounded-xl border border-brand-foreground/15 bg-brand-foreground/5 p-5">
                     <p className="text-xs text-brand-foreground/50">{table.schema}</p>
                     <h3 className="font-mono text-lg font-bold">{table.name}</h3>
