@@ -15,14 +15,15 @@ export async function GET(request: NextRequest) {
   if (!projectId) return NextResponse.json({ error: 'projectId es requerido' }, { status: 400 })
   try {
     const token = await getToken(CONNECTOR, { subject: { type: 'app' } })
+    const project = await neon(`/projects/${encodeURIComponent(projectId)}`, token)
     const branches = await neon(`/projects/${encodeURIComponent(projectId)}/branches`, token)
     const branch = branches.branches?.find((item: { primary?: boolean }) => item.primary) ?? branches.branches?.[0]
-    if (!branch?.id) return NextResponse.json({ projectId, branch: null, tables: [] })
+    if (!branch?.id) return NextResponse.json({ projectId, name: project.name ?? projectId, branch: null, tables: [] })
     const databases = await neon(`/projects/${encodeURIComponent(projectId)}/branches/${encodeURIComponent(branch.id)}/databases`, token)
     const database = databases.databases?.[0]
-    if (!database?.name) return NextResponse.json({ projectId, branch: branch.name ?? branch.id, tables: [] })
+    if (!database?.name) return NextResponse.json({ projectId, name: project.name ?? projectId, branch: branch.name ?? branch.id, tables: [] })
     const schema = await neon(`/projects/${encodeURIComponent(projectId)}/branches/${encodeURIComponent(branch.id)}/schema?db_name=${encodeURIComponent(database.name)}&format=json`, token)
-    return NextResponse.json({ projectId, branch: branch.name ?? branch.id, database: database.name, tables: schema.tables ?? [] }, { headers: { 'Cache-Control': 'private, max-age=60' } })
+    return NextResponse.json({ projectId, name: project.name ?? projectId, branch: branch.name ?? branch.id, database: database.name, tables: schema.tables ?? [] }, { headers: { 'Cache-Control': 'private, max-age=60' } })
   } catch (error) {
     console.error('[v0] Neon schema lookup error:', error)
     return NextResponse.json({ error: error instanceof Error ? error.message : 'No se pudo consultar el esquema de Neon' }, { status: 502 })
