@@ -5,8 +5,19 @@ import { clients, db, normalizeClient } from '@/lib/db'
 export const dynamic = 'force-dynamic'
 
 export async function GET() {
-  const rows = await db.select().from(clients).orderBy(asc(clients.lastName), asc(clients.firstName))
-  return NextResponse.json(rows)
+  const rows = await db.select({
+    id: clients.id,
+    firstName: clients.firstName,
+    lastName: clients.lastName,
+    phone: clients.phone,
+    hostingPlan: clients.hostingPlan,
+    domain: clients.domain,
+    server: clients.server,
+    github: clients.github,
+    status: clients.status,
+    notes: clients.notes,
+  }).from(clients).orderBy(asc(clients.lastName), asc(clients.firstName)).limit(500)
+  return NextResponse.json(rows, { headers: { 'Cache-Control': 'no-store' } })
 }
 
 export async function POST(request: Request) {
