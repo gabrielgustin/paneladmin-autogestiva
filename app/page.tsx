@@ -36,6 +36,14 @@ export default function Page() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [controlling, setControlling] = useState<string | null>(null)
+  const [hasScrolled, setHasScrolled] = useState(false)
+
+  useEffect(() => {
+    const handleScroll = () => setHasScrolled(window.scrollY > 140)
+    handleScroll()
+    window.addEventListener('scroll', handleScroll, { passive: true })
+    return () => window.removeEventListener('scroll', handleScroll)
+  }, [])
 
   async function controlCompute(project: Project, action: 'suspend' | 'start') {
     if (!project.endpointId) return
@@ -72,9 +80,9 @@ export default function Page() {
   const limitAlerts = sortedProjects.flatMap((project) => project.alerts.map((alert) => ({ ...alert, project: project.name, id: `${project.id}-${alert.type}` })))
 
   return <main className="min-h-screen bg-brand text-brand-foreground" style={{ backgroundImage: 'linear-gradient(rgba(255,255,255,.055) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,.055) 1px, transparent 1px)', backgroundSize: '42px 42px' }}>
-    <div className="relative overflow-hidden bg-transparent text-brand-foreground">
+    <div className="relative overflow-visible bg-transparent text-brand-foreground">
       <div className="relative mx-auto max-w-7xl px-6 py-12 md:px-10 md:py-16">
-        <button onClick={() => load()} className="absolute right-6 top-12 inline-flex h-10 items-center justify-center gap-2 rounded-full bg-orange px-5 text-sm font-semibold text-orange-foreground shadow-sm transition-transform hover:-translate-y-0.5 disabled:opacity-50 md:right-10 md:top-16" disabled={loading}><RefreshCw className={loading ? 'size-4 animate-spin' : 'size-4'} />{loading ? 'Sincronizando' : 'Actualizar'}</button>
+        <button onClick={() => load()} aria-label={loading ? 'Sincronizando' : 'Actualizar datos'} className={`${hasScrolled ? 'fixed right-5 top-5 z-50 size-12 rounded-full px-0 shadow-lg shadow-black/20' : 'absolute right-6 top-12 h-10 px-5 md:right-10 md:top-16'} inline-flex items-center justify-center gap-2 bg-orange text-sm font-semibold text-orange-foreground transition-all duration-300 hover:-translate-y-0.5 disabled:opacity-50`} disabled={loading}><RefreshCw className={loading ? 'size-4 animate-spin' : 'size-4'} /><span className={hasScrolled ? 'sr-only' : ''}>{loading ? 'Sincronizando' : 'Actualizar'}</span></button>
         <div className="max-w-3xl"><div className="mb-5 flex flex-wrap items-center gap-3"><span className="rounded-full border border-brand-foreground/20 bg-brand-foreground/10 px-3 py-1.5 text-xs font-semibold text-brand-foreground">Infraestructura</span><Link href="/clientes" className="rounded-full border border-orange/40 bg-orange/10 px-3 py-1.5 text-xs font-bold text-orange hover:bg-orange/20">Dashboard de clientes</Link></div><h1 className="max-w-2xl text-4xl font-black tracking-tight text-balance md:text-6xl">Panel Administrador</h1></div>
       </div>
     </div>
