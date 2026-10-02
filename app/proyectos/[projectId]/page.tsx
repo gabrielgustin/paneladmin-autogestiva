@@ -69,30 +69,6 @@ export default function ProjectPage() {
             <h2 className="mt-8 mb-3 text-xs font-bold tracking-[0.16em] text-brand-foreground/60 uppercase">Registros</h2>
             <DataGrid key={params.projectId + publicTables.length} projectId={params.projectId} tables={publicTables.map(({ name, schema }) => ({ name, schema }))} />
 
-            <h2 className="mt-10 mb-3 text-xs font-bold tracking-[0.16em] text-brand-foreground/60 uppercase">Estructura</h2>
-            {publicTables.length === 0 ? (
-              <p className="rounded-xl border border-brand-foreground/15 p-6 text-sm text-brand-foreground/60">No se encontraron tablas públicas en este esquema.</p>
-            ) : (
-              <section className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-                {publicTables.map((table) => (
-                  <article key={`${table.schema}.${table.name}`} className="rounded-xl border border-brand-foreground/15 bg-brand-foreground/5 p-5">
-                    <p className="text-xs text-brand-foreground/50">{table.schema}</p>
-                    <h3 className="font-mono text-lg font-bold">{table.name}</h3>
-                    <ul className="mt-4 flex flex-col gap-2 text-sm">
-                      {table.columns.map((column) => (
-                        <li key={column.name} className="flex items-center justify-between gap-3 border-t border-brand-foreground/10 pt-2">
-                          <span className="font-mono">{column.name}</span>
-                          <span className="font-mono text-xs text-brand-foreground/55">
-                            {column.type ?? column.data_type}
-                            {(column.nullable ?? column.is_nullable) === false ? ' · not null' : ''}
-                          </span>
-                        </li>
-                      ))}
-                    </ul>
-                  </article>
-                ))}
-              </section>
-            )}
           </>
         )}
       </div>
