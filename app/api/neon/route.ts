@@ -67,6 +67,18 @@ export async function GET(request: Request) {
     const projectsResponse = await neon('/projects', token)
     const rawProjects = (projectsResponse.projects ?? []) as Record<string, unknown>[]
     const orgIds = [...new Set(rawProjects.map((project) => project.org_id).filter((id): id is string => typeof id === 'string'))]
+    const endpointsByProject = new Map<string, { id: string; current_state?: string }>()
+    await Promise.all(rawProjects.map(async (project) => {
+      const projectId = typeof project.id === 'string' ? project.id : ''
+      if (!projectId) return
+      try {
+        const response = await neon(`/projects/${projectId}/endpoints`, token)
+        const endpoint = Array.isArray(response.endpoints) ? response.endpoints[0] : null
+        if (endpoint?.id) endpointsByProject.set(projectId, { id: String(endpoint.id), current_state: typeof endpoint.current_state === 'string' ? endpoint.current_state : undefined })
+      } catch (error) {
+        console.error('[v0] Neon endpoint lookup error:', error)
+      }
+    }))
     const from = monthStart.toISOString()
     const to = nextMonthStart.toISOString()
     const usageByProject = new Map<string, Usage>()
@@ -199,6 +211,8 @@ export async function GET(request: Request) {
         id,
         orgId: project.org_id,
         name: project.name,
+        endpointId: endpointsByProject.get(id)?.id ?? null,
+        endpointStatus: endpointsByProject.get(id)?.current_state ?? 'unknown',
         region: project.region_id,
         plan: planByProject.get(id) ?? (project.owner as Record<string, unknown> | undefined)?.subscription_type ?? 'unknown',
         computeHours: usage ? usage.compute : null,
