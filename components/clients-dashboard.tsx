@@ -205,9 +205,9 @@ export function ClientsDashboard() {
               </button>
             </div>
             <div className="grid gap-4 sm:grid-cols-2">
-              {(Object.keys(emptyForm) as (keyof ClientInput)[]).map((field) => (
+              {(Object.keys(emptyForm) as (keyof ClientInput)[]).filter((field) => field !== 'proximoPago').map((field) => (
                 <label key={field} className="text-xs font-semibold text-brand-foreground/65">
-                  {COLUMN_LABELS[field]}
+                  {field === 'ultimoPago' ? 'Fecha del pago' : COLUMN_LABELS[field]}
                   {field === 'plan' || field === 'metodoPago' ? (
                     <div className="relative mt-2">
                       <select
@@ -223,8 +223,8 @@ export function ClientsDashboard() {
                     </div>
                   ) : (
                     <input
-                      required={field === 'nombre' || field === 'apellido'}
-                      type={field === 'mail' ? 'email' : ['dominioVencimiento', 'ultimoPago', 'proximoPago'].includes(field) ? 'date' : 'text'}
+                      required={field === 'nombre' || field === 'apellido' || field === 'ultimoPago'}
+                      type={field === 'mail' ? 'email' : ['dominioVencimiento', 'ultimoPago'].includes(field) ? 'date' : 'text'}
                       value={form[field]}
                       onChange={(e) => update(field, e.target.value)}
                       className={`${inputClass} mt-2`}
