@@ -7,6 +7,7 @@ import Link from 'next/link'
 import { COLUMN_LABELS, fingerprint, type ClientInput, type SheetClient } from '@/lib/clients-shared'
 
 const emptyForm: ClientInput = { nombre: '', apellido: '', mail: '', telefono: '', servidor: '', baseDatos: '', plan: '' }
+const planOptions = ['$10.000', '$15.000', '$20.000', '$30.000', '$40.000', '$50.000']
 const inputClass =
   'h-11 w-full rounded-lg border border-brand-foreground/15 bg-brand-foreground/10 px-3 text-sm text-brand-foreground outline-none placeholder:text-brand-foreground/40 focus:border-orange'
 
@@ -194,13 +195,28 @@ export function ClientsDashboard() {
               {(Object.keys(emptyForm) as (keyof ClientInput)[]).map((field) => (
                 <label key={field} className="text-xs font-semibold text-brand-foreground/65">
                   {COLUMN_LABELS[field]}
-                  <input
-                    required={field === 'nombre' || field === 'apellido'}
-                    type={field === 'mail' ? 'email' : 'text'}
-                    value={form[field]}
-                    onChange={(e) => update(field, e.target.value)}
-                    className={`${inputClass} mt-2`}
-                  />
+                  {field === 'plan' ? (
+                    <div className="relative mt-2">
+                      <select
+                        required
+                        value={form.plan}
+                        onChange={(e) => update('plan', e.target.value)}
+                        className={`${inputClass} appearance-none pr-10`}
+                      >
+                        <option value="">Seleccioná un plan</option>
+                        {planOptions.map((option) => <option key={option} value={option}>{option}</option>)}
+                      </select>
+                      <ChevronDown className="pointer-events-none absolute right-3 top-1/2 size-4 -translate-y-1/2 text-brand-foreground/70" aria-hidden="true" />
+                    </div>
+                  ) : (
+                    <input
+                      required={field === 'nombre' || field === 'apellido'}
+                      type={field === 'mail' ? 'email' : 'text'}
+                      value={form[field]}
+                      onChange={(e) => update(field, e.target.value)}
+                      className={`${inputClass} mt-2`}
+                    />
+                  )}
                 </label>
               ))}
             </div>
