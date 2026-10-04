@@ -6,7 +6,7 @@ import { ArrowLeft, ChevronDown, Database, LogOut, Pencil, Plus, RefreshCw, Sear
 import Link from 'next/link'
 import { COLUMN_LABELS, fingerprint, type ClientInput, type SheetClient } from '@/lib/clients-shared'
 
-const emptyForm: ClientInput = { nombre: '', apellido: '', mail: '', telefono: '', servidor: '', baseDatos: '', plan: '' }
+const emptyForm: ClientInput = { nombre: '', apellido: '', empresa: '', dominio: '', dominioVencimiento: '', mail: '', telefono: '', servidor: '', baseDatos: '', plan: '' }
 const planOptions = ['$10.000', '$15.000', '$20.000', '$30.000', '$40.000', '$50.000']
 const inputClass =
   'h-11 w-full rounded-lg border border-brand-foreground/15 bg-brand-foreground/10 px-3 text-sm text-brand-foreground outline-none placeholder:text-brand-foreground/40 focus:border-orange'
@@ -54,7 +54,7 @@ export function ClientsDashboard() {
   const filtered = useMemo(
     () =>
       clients.filter((client) => {
-        const text = `${client.nombre} ${client.apellido} ${client.mail} ${client.telefono}`.toLowerCase()
+        const text = `${client.nombre} ${client.apellido} ${client.empresa} ${client.dominio} ${client.mail} ${client.telefono}`.toLowerCase()
         return text.includes(query.toLowerCase()) && (plan === 'all' || client.plan === plan) && (servidor === 'all' || client.servidor === servidor)
       }),
     [clients, plan, query, servidor],
@@ -211,7 +211,7 @@ export function ClientsDashboard() {
                   ) : (
                     <input
                       required={field === 'nombre' || field === 'apellido'}
-                      type={field === 'mail' ? 'email' : 'text'}
+                      type={field === 'mail' ? 'email' : field === 'dominioVencimiento' ? 'date' : 'text'}
                       value={form[field]}
                       onChange={(e) => update(field, e.target.value)}
                       className={`${inputClass} mt-2`}
@@ -255,10 +255,19 @@ function Stat({ label, value, icon }: { label: string; value: number; icon: Reac
 
 function ClientRow({ client, onEdit, onDelete }: { client: SheetClient; onEdit: () => void; onDelete: () => void }) {
   return (
-    <div className="grid gap-4 p-5 md:grid-cols-[1.4fr_1fr_1fr_1fr_auto] md:items-center">
+    <div className="grid gap-4 p-5 md:grid-cols-[1.35fr_1fr_1.2fr_1fr_1fr_1fr_auto] md:items-center">
       <div className="min-w-0">
         <div className="font-bold">{client.nombre} {client.apellido}</div>
         <div className="mt-1 truncate text-xs text-brand-foreground/55">{client.mail || 'Sin mail'} · {client.telefono || 'Sin teléfono'}</div>
+      </div>
+      <div>
+        <div className="text-xs text-brand-foreground/50">Empresa</div>
+        <div className="truncate text-sm">{client.empresa || '—'}</div>
+      </div>
+      <div>
+        <div className="text-xs text-brand-foreground/50">Dominio</div>
+        <div className="truncate text-sm">{client.dominio || '—'}</div>
+        <div className="mt-1 text-[11px] text-brand-foreground/45">Vence: {client.dominioVencimiento || '—'}</div>
       </div>
       <div>
         <div className="text-xs text-brand-foreground/50">Servidor</div>
