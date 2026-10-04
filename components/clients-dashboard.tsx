@@ -73,15 +73,16 @@ export function ClientsDashboard() {
     if (client.metodoPago === 'Pago semestral') return total + amount / 6
     return total + amount
   }, 0), [clients])
-  const expiringDomains = useMemo(() => {
+  const nextExpiringDomain = useMemo(() => {
     const today = new Date()
-    const limit = new Date(today)
-    limit.setDate(limit.getDate() + 30)
-    return clients.filter((client) => {
-      if (!client.dominioVencimiento) return false
-      const expiration = new Date(`${client.dominioVencimiento}T12:00:00`)
-      return expiration >= today && expiration <= limit
-    }).length
+    return clients
+      .filter((client) => client.dominioVencimiento)
+      .map((client) => ({
+        client,
+        date: new Date(`${client.dominioVencimiento}T12:00:00`),
+      }))
+      .filter(({ date }) => date >= today)
+      .sort((a, b) => a.date.getTime() - b.date.getTime())[0] ?? null
   }, [clients])
   const filtered = useMemo(
     () =>
@@ -174,7 +175,18 @@ export function ClientsDashboard() {
             <section className="mb-6 grid gap-4 sm:grid-cols-3">
               <Stat label="Clientes totales" value={clients.length} icon={<UserRound />} />
               <Stat label="Recaudación mensual estimada" value={`$${Math.round(monthlyRevenue).toLocaleString('es-AR')}`} icon={<CircleDollarSign />} />
-              <Stat label="Dominios próximos a vencer" value={expiringDomains} icon={<CalendarClock />} />
+              <Stat
+                label="Próximo dominio a vencer"
+                value={
+                  <>
+                    <span className="block truncate">{nextExpiringDomain?.client.dominio || 'Sin dominio'}</span>
+                    <span className="mt-1 block text-sm font-medium text-brand-foreground/50">
+                      {nextExpiringDomain ? nextExpiringDomain.date.toLocaleDateString('es-AR') : 'Sin fecha registrada'}
+                    </span>
+                  </>
+                }
+                icon={<CalendarClock />}
+              />
             </section>
             {error && <p role="alert" className="mb-4 text-sm text-red-300">{error}</p>}
             <section className="overflow-hidden rounded-xl border border-brand-foreground/15 bg-brand-foreground/10">
