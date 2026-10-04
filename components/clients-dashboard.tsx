@@ -307,6 +307,13 @@ function ClientDetails({ client, onClose }: { client: SheetClient; onClose: () =
   )
 }
 
+const feminineNames = new Set(['ana', 'beatriz', 'camila', 'carla', 'carmen', 'clara', 'daniela', 'elena', 'emilia', 'florencia', 'gabriela', 'ines', 'isabel', 'josefina', 'julieta', 'laura', 'lucia', 'luisa', 'marcela', 'maria', 'mariana', 'martina', 'maria', 'monica', 'natalia', 'noelia', 'patricia', 'paula', 'romina', 'rosa', 'sofia', 'valentina', 'veronica'])
+
+function clientLabel(nombre: string) {
+  const normalizedName = nombre.trim().toLocaleLowerCase('es').normalize('NFD').replace(/[\\u0300-\\u036f]/g, '')
+  return feminineNames.has(normalizedName) ? 'Clienta' : 'Cliente'
+}
+
 function ClientRow({ client, onOpen, onEdit, onDelete }: { client: SheetClient; onOpen: () => void; onEdit: () => void; onDelete: () => void }) {
   return (
     <div
@@ -317,6 +324,7 @@ function ClientRow({ client, onOpen, onEdit, onDelete }: { client: SheetClient; 
       className="grid cursor-pointer grid-cols-2 items-start gap-x-4 gap-y-3 p-4 transition-colors hover:bg-brand-foreground/5 focus:outline-none focus:ring-2 focus:ring-orange/60 sm:gap-4 sm:p-5 md:grid-cols-[1.35fr_1fr_1.2fr_1fr_1fr_1fr_1.1fr_1.3fr_auto] md:items-start"
     >
       <div className="col-span-2 min-w-0 md:col-span-1">
+        <div className="text-xs text-brand-foreground/50">{clientLabel(client.nombre)}</div>
         <div className="font-bold">{client.nombre} {client.apellido}</div>
         <div className="mt-1 truncate text-xs text-brand-foreground/55">{client.mail || 'Sin mail'} · {client.telefono || 'Sin teléfono'}</div>
       </div>
