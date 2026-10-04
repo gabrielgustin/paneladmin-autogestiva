@@ -11,6 +11,7 @@
   "dependencies": {
     "@base-ui/react": "^1.5.0",
     "@neondatabase/api-client": "^2.7.3",
+    "@supabase/supabase-js": "^2.117.2",
     "@vercel/analytics": "1.6.1",
     "@vercel/connect": "^2.3.3",
     "class-variance-authority": "^0.7.1",
