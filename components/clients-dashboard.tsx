@@ -179,7 +179,7 @@ export function ClientsDashboard() {
                 label="Próximo dominio a vencer"
                 value={
                   <>
-                    <span className="block truncate">{nextExpiringDomain?.client.dominio || 'Sin dominio'}</span>
+                    <span className="block truncate">{nextExpiringDomain?.client.empresa || 'Sin empresa'}</span>
                     <span className="mt-1 block text-sm font-medium text-brand-foreground/50">
                       {nextExpiringDomain ? nextExpiringDomain.date.toLocaleDateString('es-AR') : 'Sin fecha registrada'}
                     </span>
