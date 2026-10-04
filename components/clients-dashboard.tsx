@@ -245,8 +245,8 @@ function Stat({ label, value, icon }: { label: string; value: number; icon: Reac
 
 function ClientRow({ client, onEdit, onDelete }: { client: SheetClient; onEdit: () => void; onDelete: () => void }) {
   return (
-    <div className="grid gap-3 p-4 sm:gap-4 sm:p-5 md:grid-cols-[1.35fr_1fr_1.2fr_1fr_1fr_1fr_auto] md:items-center">
-      <div className="min-w-0">
+    <div className="grid grid-cols-2 items-start gap-x-4 gap-y-3 p-4 sm:gap-4 sm:p-5 md:grid-cols-[1.35fr_1fr_1.2fr_1fr_1fr_1fr_auto] md:items-center">
+      <div className="col-span-2 min-w-0 md:col-span-1">
         <div className="font-bold">{client.nombre} {client.apellido}</div>
         <div className="mt-1 truncate text-xs text-brand-foreground/55">{client.mail || 'Sin mail'} · {client.telefono || 'Sin teléfono'}</div>
       </div>
@@ -271,7 +271,7 @@ function ClientRow({ client, onEdit, onDelete }: { client: SheetClient; onEdit: 
         <div className="text-xs text-brand-foreground/50">Plan</div>
         <div className="font-semibold text-orange">{client.plan || '—'}</div>
       </div>
-      <div className="flex gap-2 md:justify-end">
+      <div className="col-span-2 flex gap-2 md:col-span-1 md:justify-end">
         <button onClick={onEdit} className="rounded-lg border border-brand-foreground/15 p-2 text-brand-foreground/70 hover:bg-brand-foreground/10" aria-label={`Editar ${client.nombre}`}>
           <Pencil className="size-4" />
         </button>
