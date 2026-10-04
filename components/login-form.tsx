@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { Lock } from 'lucide-react'
+import { TAB_MARKER } from '@/components/session-guard'
 
 const inputClass =
   'h-11 w-full rounded-lg border border-brand-foreground/15 bg-brand-foreground/10 px-3 text-sm text-brand-foreground outline-none placeholder:text-brand-foreground/40 focus:border-orange'
@@ -26,7 +27,8 @@ export function LoginForm() {
       })
       const result = await response.json()
       if (!response.ok) throw new Error(result.error ?? 'No se pudo iniciar sesión')
-      router.push('/clientes')
+      sessionStorage.setItem(TAB_MARKER, '1')
+      router.push('/')
       router.refresh()
     } catch (e) {
       setError(e instanceof Error ? e.message : 'No se pudo iniciar sesión')

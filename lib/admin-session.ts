@@ -2,7 +2,10 @@ import { createHash, createHmac, timingSafeEqual } from 'node:crypto'
 import { cookies } from 'next/headers'
 
 export const SESSION_COOKIE = 'admin_session_v2'
-const SESSION_SECONDS = 60 * 60 * 2
+// The open tab renews the session every minute; if it stops (tab closed, device asleep) the session lapses on its own.
+export const SESSION_SECONDS = 60 * 10
+// When a tab is unloading, the session is cut to this window so a reload survives but a closed tab does not.
+export const CLOSING_GRACE_SECONDS = 15
 
 function secret() {
   const value = process.env.BETTER_AUTH_SECRET
@@ -35,9 +38,9 @@ export function adminSubjectId() {
   return createHash('sha256').update(email).digest('hex').slice(0, 24)
 }
 
-export function createSessionToken() {
+export function createSessionToken(seconds = SESSION_SECONDS) {
   const payload = Buffer.from(
-    JSON.stringify({ sub: adminSubjectId(), exp: Math.floor(Date.now() / 1000) + SESSION_SECONDS }),
+    JSON.stringify({ sub: adminSubjectId(), exp: Math.floor(Date.now() / 1000) + seconds }),
   ).toString('base64url')
   return `${payload}.${sign(payload)}`
 }

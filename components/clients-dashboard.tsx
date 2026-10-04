@@ -2,7 +2,8 @@
 
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { ArrowLeft, ChevronDown, Database, LogOut, Pencil, Plus, RefreshCw, Search, Server, Trash2, UserRound, X } from 'lucide-react'
+import { LogoutButton } from '@/components/session-guard'
+import { ArrowLeft, ChevronDown, Database, Pencil, Plus, RefreshCw, Search, Server, Trash2, UserRound, X } from 'lucide-react'
 import Link from 'next/link'
 import { COLUMN_LABELS, fingerprint, type ClientInput, type SheetClient } from '@/lib/clients-shared'
 
@@ -59,12 +60,6 @@ export function ClientsDashboard() {
       }),
     [clients, plan, query, servidor],
   )
-
-  async function logout() {
-    await fetch('/api/admin/logout', { method: 'POST' })
-    router.replace('/login')
-    router.refresh()
-  }
 
   function openNew() {
     setEditing(null)
@@ -140,10 +135,7 @@ export function ClientsDashboard() {
               <Plus className="size-4" />
               Nuevo cliente
             </button>
-            <button onClick={logout} className="inline-flex h-11 items-center gap-2 rounded-full border border-brand-foreground/20 px-4 text-sm font-bold hover:bg-brand-foreground/10">
-              <LogOut className="size-4" />
-              Salir
-            </button>
+            <LogoutButton />
           </div>
         </div>
       </header>
