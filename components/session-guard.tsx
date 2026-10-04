@@ -4,7 +4,7 @@ import { useEffect } from 'react'
 import { LogOut } from 'lucide-react'
 
 export const TAB_MARKER = 'admin-tab-active'
-const LOGOUT_URL = 'https://www.autogestiva.com.ar'
+const LOGOUT_URL = '/login'
 const HEARTBEAT_MS = 60_000
 
 export async function endSession() {
