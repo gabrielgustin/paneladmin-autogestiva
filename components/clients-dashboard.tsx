@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { LogoutButton } from '@/components/session-guard'
-import { ArrowLeft, ChevronDown, Database, Pencil, Plus, RefreshCw, Search, Server, Trash2, UserRound, X } from 'lucide-react'
+import { ArrowLeft, CalendarClock, ChevronDown, CircleDollarSign, Database, Pencil, Plus, RefreshCw, Search, Server, Trash2, UserRound, X } from 'lucide-react'
 import Link from 'next/link'
 import { COLUMN_LABELS, fingerprint, type ClientInput, type SheetClient } from '@/lib/clients-shared'
 
@@ -67,6 +67,22 @@ export function ClientsDashboard() {
 
   const plans = useMemo(() => [...new Set(clients.map((client) => client.plan).filter(Boolean))], [clients])
   const servers = useMemo(() => [...new Set(clients.map((client) => client.servidor).filter(Boolean))], [clients])
+  const monthlyRevenue = useMemo(() => clients.reduce((total, client) => {
+    const amount = Number.parseInt(client.plan.replace(/[^0-9]/g, ''), 10) || 0
+    if (client.metodoPago === 'Pago anual') return total + amount / 12
+    if (client.metodoPago === 'Pago semestral') return total + amount / 6
+    return total + amount
+  }, 0), [clients])
+  const expiringDomains = useMemo(() => {
+    const today = new Date()
+    const limit = new Date(today)
+    limit.setDate(limit.getDate() + 30)
+    return clients.filter((client) => {
+      if (!client.dominioVencimiento) return false
+      const expiration = new Date(`${client.dominioVencimiento}T12:00:00`)
+      return expiration >= today && expiration <= limit
+    }).length
+  }, [clients])
   const filtered = useMemo(
     () =>
       clients.filter((client) => {
@@ -157,8 +173,8 @@ export function ClientsDashboard() {
         <>
             <section className="mb-6 grid gap-4 sm:grid-cols-3">
               <Stat label="Clientes totales" value={clients.length} icon={<UserRound />} />
-              <Stat label="Servidores distintos" value={servers.length} icon={<Server />} />
-              <Stat label="Con base de datos" value={clients.filter((client) => client.baseDatos).length} icon={<Database />} />
+              <Stat label="Recaudación mensual estimada" value={`$${Math.round(monthlyRevenue).toLocaleString('es-AR')}`} icon={<CircleDollarSign />} />
+              <Stat label="Dominios próximos a vencer" value={expiringDomains} icon={<CalendarClock />} />
             </section>
             {error && <p role="alert" className="mb-4 text-sm text-red-300">{error}</p>}
             <section className="overflow-hidden rounded-xl border border-brand-foreground/15 bg-brand-foreground/10">
@@ -256,7 +272,7 @@ function SelectFilter({ value, onChange, allLabel, options }: { value: string; o
   )
 }
 
-function Stat({ label, value, icon }: { label: string; value: number; icon: React.ReactNode }) {
+function Stat({ label, value, icon }: { label: string; value: React.ReactNode; icon: React.ReactNode }) {
   return (
     <div className="rounded-xl border border-brand-foreground/15 bg-brand-foreground/10 p-5">
       <div className="mb-4 flex size-9 items-center justify-center rounded-lg bg-orange text-orange-foreground">{icon}</div>
