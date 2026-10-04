@@ -129,10 +129,6 @@ export function ClientsDashboard() {
               <RefreshCw className={`size-4 ${loading ? 'animate-spin' : ''}`} />
               Actualizar
             </button>
-            <button onClick={openNew} className="inline-flex h-11 items-center gap-2 rounded-full bg-orange px-5 text-sm font-bold text-orange-foreground disabled:opacity-50">
-              <Plus className="size-4" />
-              Nuevo cliente
-            </button>
             <LogoutButton />
           </div>
         </div>
@@ -155,6 +151,10 @@ export function ClientsDashboard() {
                 </label>
                 <SelectFilter value={servidor} onChange={setServidor} allLabel="Todos los servidores" options={servers} />
                 <SelectFilter value={plan} onChange={setPlan} allLabel="Todos los planes" options={plans} />
+                <button onClick={openNew} className="inline-flex h-11 items-center justify-center gap-2 rounded-full bg-orange px-5 text-sm font-bold text-orange-foreground disabled:opacity-50">
+                  <Plus className="size-4" />
+                  Nuevo cliente
+                </button>
               </div>
               <div className="divide-y divide-brand-foreground/10">
                 {loading && clients.length === 0 ? (
