@@ -80,17 +80,17 @@ export default function Page() {
   const spikes = sortedProjects.filter((project) => project.spike)
   const limitAlerts = sortedProjects.flatMap((project) => project.alerts.map((alert) => ({ ...alert, project: project.name, id: `${project.id}-${alert.type}` })))
 
-  return <main className="min-h-screen bg-brand text-brand-foreground" style={{ backgroundImage: 'linear-gradient(rgba(255,255,255,.055) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,.055) 1px, transparent 1px)', backgroundSize: '42px 42px' }}>
+  return <main className="min-h-screen overflow-x-hidden bg-brand text-brand-foreground" style={{ backgroundImage: 'linear-gradient(rgba(255,255,255,.055) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,.055) 1px, transparent 1px)', backgroundSize: '42px 42px' }}>
     <div className="relative overflow-visible bg-transparent text-brand-foreground">
-      <div className="relative mx-auto max-w-7xl px-6 pb-4 pt-12 md:px-10 md:pb-6 md:pt-16">
-        <div className={`${hasScrolled ? 'fixed right-5 top-5 z-50' : 'absolute right-6 top-12 md:right-10 md:top-16'} flex items-center gap-2`}>
-          <button onClick={() => load()} aria-label={loading ? 'Sincronizando' : 'Actualizar datos'} className="inline-flex h-10 items-center justify-center gap-2 rounded-full bg-orange px-5 text-sm font-semibold text-orange-foreground transition-all duration-300 hover:-translate-y-0.5 disabled:opacity-50" disabled={loading}><RefreshCw className={`size-4 ${loading ? 'animate-spin' : ''}`} /><span>{loading ? 'Sincronizando' : 'Actualizar'}</span></button>
+      <div className="relative mx-auto max-w-7xl px-4 pb-4 pt-6 sm:px-6 md:px-10 md:pb-6 md:pt-16">
+        <div className={`${hasScrolled ? 'fixed right-3 top-3 z-50' : 'relative mb-5 sm:absolute sm:right-6 sm:top-12 sm:mb-0 md:right-10 md:top-16'} flex w-full items-center gap-2 sm:w-auto`}>
+          <button onClick={() => load()} aria-label={loading ? 'Sincronizando' : 'Actualizar datos'} className="inline-flex h-10 min-w-0 flex-1 items-center justify-center gap-2 rounded-full bg-orange px-3 text-xs font-semibold sm:flex-none sm:px-5 sm:text-sm text-orange-foreground transition-all duration-300 hover:-translate-y-0.5 disabled:opacity-50" disabled={loading}><RefreshCw className={`size-4 ${loading ? 'animate-spin' : ''}`} /><span>{loading ? 'Sincronizando' : 'Actualizar'}</span></button>
           <LogoutButton className="h-10 px-4 text-sm" />
         </div>
         <div className="max-w-3xl"><div className="mb-5 flex flex-wrap items-center gap-3"><span className="rounded-full border border-brand-foreground/20 bg-brand-foreground/10 px-3 py-1.5 text-xs font-semibold text-brand-foreground">Infraestructura</span><Link href="/clientes" className="rounded-full border border-orange/40 bg-orange/10 px-3 py-1.5 text-xs font-bold text-orange hover:bg-orange/20">Dashboard de clientes</Link></div></div>
       </div>
     </div>
-    <div className="mx-auto max-w-7xl px-4 py-6 text-brand-foreground md:px-6 md:py-8">
+    <div className="mx-auto max-w-7xl px-3 py-4 text-brand-foreground sm:px-4 sm:py-6 md:px-6 md:py-8">
       {error ? <div className="mt-8 rounded-lg border border-destructive/30 bg-destructive/10 p-4 text-sm text-destructive">{error}</div> : <>
         <section className="mb-6 flex flex-col gap-4 rounded-xl border border-brand-foreground/15 bg-brand-foreground/10 p-5 md:flex-row md:items-end md:justify-between">
           <div><div className="text-xs font-bold uppercase tracking-[0.16em] text-orange">Histórico mensual de cuenta</div><h2 className="mt-2 text-xl font-bold">Consumo de {month}</h2><p className="mt-1 text-sm text-brand-foreground/70">Suma de los registros diarios de todos tus proyectos Neon, incluyendo los proyectos sin actividad.</p></div>

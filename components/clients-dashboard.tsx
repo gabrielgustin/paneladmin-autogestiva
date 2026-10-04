@@ -113,18 +113,18 @@ export function ClientsDashboard() {
 
   return (
     <main
-      className="min-h-screen bg-brand text-brand-foreground"
+      className="min-h-screen overflow-x-hidden bg-brand text-brand-foreground"
       style={{ backgroundImage: 'linear-gradient(rgba(255,255,255,.055) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,.055) 1px, transparent 1px)', backgroundSize: '42px 42px' }}
     >
       <header className="border-b border-brand-foreground/10 bg-brand/85">
-        <div className="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-4 px-6 py-5 md:px-10">
+        <div className="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-3 px-4 py-4 sm:px-6 sm:py-5 md:px-10">
           <div>
             <Link href="/" className="mb-4 inline-flex items-center gap-2 text-xs font-semibold text-brand-foreground/60 hover:text-orange">
               <ArrowLeft className="size-4" />
               Panel de infraestructura
             </Link>
           </div>
-          <div className="flex flex-wrap items-center gap-2">
+          <div className="flex w-full flex-wrap items-center gap-2 sm:w-auto">
             <button onClick={load} className="inline-flex h-11 items-center gap-2 rounded-full border border-brand-foreground/20 px-4 text-sm font-bold hover:bg-brand-foreground/10">
               <RefreshCw className={`size-4 ${loading ? 'animate-spin' : ''}`} />
               Actualizar
@@ -134,7 +134,7 @@ export function ClientsDashboard() {
         </div>
       </header>
 
-      <div className="mx-auto max-w-7xl px-6 py-8 md:px-10">
+      <div className="mx-auto max-w-7xl px-3 py-5 sm:px-4 sm:py-8 md:px-10">
         <>
             <section className="mb-6 grid gap-4 sm:grid-cols-3">
               <Stat label="Clientes totales" value={clients.length} icon={<UserRound />} />
@@ -143,7 +143,7 @@ export function ClientsDashboard() {
             </section>
             {error && <p role="alert" className="mb-4 text-sm text-red-300">{error}</p>}
             <section className="overflow-hidden rounded-xl border border-brand-foreground/15 bg-brand-foreground/10">
-              <div className="flex flex-col gap-3 border-b border-brand-foreground/10 p-4 md:flex-row">
+              <div className="flex flex-col gap-3 border-b border-brand-foreground/10 p-3 sm:p-4 md:flex-row">
                 <label className="relative flex-1">
                   <span className="sr-only">Buscar clientes</span>
                   <Search className="absolute left-3 top-3 size-4 text-brand-foreground/45" />
@@ -170,8 +170,8 @@ export function ClientsDashboard() {
       </div>
 
       {isFormOpen && (
-        <div className="fixed inset-0 z-20 flex items-start justify-center overflow-y-auto bg-black/60 p-4 md:p-10">
-          <form onSubmit={save} className="w-full max-w-2xl rounded-2xl border border-brand-foreground/15 bg-brand p-6 shadow-2xl">
+        <div className="fixed inset-0 z-20 flex items-start justify-center overflow-y-auto bg-black/60 p-2 sm:p-4 md:p-10">
+          <form onSubmit={save} className="w-full max-w-2xl rounded-2xl border border-brand-foreground/15 bg-brand p-4 shadow-2xl sm:p-6">
             <div className="mb-6 flex items-center justify-between">
               <div>
                 <div className="text-xs font-bold uppercase tracking-[0.16em] text-orange">Ficha de cliente</div>
@@ -223,7 +223,7 @@ export function ClientsDashboard() {
 
 function SelectFilter({ value, onChange, allLabel, options }: { value: string; onChange: (value: string) => void; allLabel: string; options: string[] }) {
   return (
-    <div className="relative md:w-52">
+    <div className="relative w-full md:w-52">
       <select aria-label={allLabel} value={value} onChange={(e) => onChange(e.target.value)} className={`${inputClass} appearance-none pr-10`}>
         <option value="all">{allLabel}</option>
         {options.map((item) => <option key={item}>{item}</option>)}
@@ -245,7 +245,7 @@ function Stat({ label, value, icon }: { label: string; value: number; icon: Reac
 
 function ClientRow({ client, onEdit, onDelete }: { client: SheetClient; onEdit: () => void; onDelete: () => void }) {
   return (
-    <div className="grid gap-4 p-5 md:grid-cols-[1.35fr_1fr_1.2fr_1fr_1fr_1fr_auto] md:items-center">
+    <div className="grid gap-3 p-4 sm:gap-4 sm:p-5 md:grid-cols-[1.35fr_1fr_1.2fr_1fr_1fr_1fr_auto] md:items-center">
       <div className="min-w-0">
         <div className="font-bold">{client.nombre} {client.apellido}</div>
         <div className="mt-1 truncate text-xs text-brand-foreground/55">{client.mail || 'Sin mail'} · {client.telefono || 'Sin teléfono'}</div>
