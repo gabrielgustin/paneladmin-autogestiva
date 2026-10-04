@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { Lock } from 'lucide-react'
+import { ArrowLeft, Lock } from 'lucide-react'
 import { TAB_MARKER } from '@/components/session-guard'
 
 const inputClass =
@@ -38,7 +38,15 @@ export function LoginForm() {
   }
 
   return (
-    <form onSubmit={submit} className="w-full max-w-sm rounded-2xl border border-brand-foreground/15 bg-brand p-6 shadow-2xl">
+    <div className="w-full max-w-sm">
+      <a
+        href="https://www.autogestiva.com.ar"
+        className="mb-4 inline-flex items-center gap-2 text-sm font-semibold text-brand-foreground/65 transition-colors hover:text-brand-foreground"
+      >
+        <ArrowLeft className="size-4" aria-hidden="true" />
+        Volver
+      </a>
+      <form onSubmit={submit} className="w-full rounded-2xl border border-brand-foreground/15 bg-brand p-6 shadow-2xl">
       <div className="mb-6 flex size-10 items-center justify-center rounded-lg bg-orange text-orange-foreground">
         <Lock className="size-5" aria-hidden="true" />
       </div>
@@ -58,6 +66,7 @@ export function LoginForm() {
       <button disabled={loading} className="mt-6 h-11 w-full rounded-full bg-orange text-sm font-bold text-orange-foreground disabled:opacity-60">
         {loading ? 'Ingresando…' : 'Ingresar'}
       </button>
-    </form>
+      </form>
+    </div>
   )
 }
