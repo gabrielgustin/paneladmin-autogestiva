@@ -19,7 +19,6 @@ export function ClientsDashboard() {
   const router = useRouter()
   const [clients, setClients] = useState<SheetClient[]>([])
   const [loading, setLoading] = useState(true)
-  const [needsGoogle, setNeedsGoogle] = useState(false)
   const [query, setQuery] = useState('')
   const [plan, setPlan] = useState('all')
   const [servidor, setServidor] = useState('all')
@@ -36,12 +35,7 @@ export function ClientsDashboard() {
       const response = await fetch('/api/clients', { cache: 'no-store' })
       if (response.status === 401) return router.replace('/login')
       const result = await response.json()
-      if (response.status === 428) {
-        setNeedsGoogle(true)
-        return
-      }
       if (!response.ok) throw new Error(result.error ?? 'No se pudieron cargar los clientes')
-      setNeedsGoogle(false)
       setClients(result)
     } catch (e) {
       setError(e instanceof Error ? e.message : 'No se pudieron cargar los clientes')
@@ -64,15 +58,6 @@ export function ClientsDashboard() {
       }),
     [clients, plan, query, servidor],
   )
-
-  async function connectGoogle() {
-    setError('')
-    const response = await fetch('/api/google/authorize', { method: 'POST' })
-    const result = await response.json()
-    if (!response.ok) return setError(result.error ?? 'No se pudo conectar con Google')
-    if (window.self !== window.top) window.open(result.url, '_blank', 'noopener,noreferrer')
-    else window.location.href = result.url
-  }
 
   async function logout() {
     await fetch('/api/admin/logout', { method: 'POST' })
@@ -143,14 +128,14 @@ export function ClientsDashboard() {
               Panel de infraestructura
             </Link>
             <h1 className="text-3xl font-black tracking-tight md:text-5xl">Clientes</h1>
-            <p className="mt-2 text-sm text-brand-foreground/65">Sincronizado en vivo con tu planilla de Google Sheets.</p>
+            <p className="mt-2 text-sm text-brand-foreground/65">Sincronizado en vivo con Supabase.</p>
           </div>
           <div className="flex flex-wrap items-center gap-2">
             <button onClick={load} className="inline-flex h-11 items-center gap-2 rounded-full border border-brand-foreground/20 px-4 text-sm font-bold hover:bg-brand-foreground/10">
               <RefreshCw className={`size-4 ${loading ? 'animate-spin' : ''}`} />
               Actualizar
             </button>
-            <button onClick={openNew} disabled={needsGoogle} className="inline-flex h-11 items-center gap-2 rounded-full bg-orange px-5 text-sm font-bold text-orange-foreground disabled:opacity-50">
+            <button onClick={openNew} className="inline-flex h-11 items-center gap-2 rounded-full bg-orange px-5 text-sm font-bold text-orange-foreground disabled:opacity-50">
               <Plus className="size-4" />
               Nuevo cliente
             </button>
@@ -163,22 +148,7 @@ export function ClientsDashboard() {
       </header>
 
       <div className="mx-auto max-w-7xl px-6 py-8 md:px-10">
-        {needsGoogle ? (
-          <section className="rounded-xl border border-brand-foreground/15 bg-brand-foreground/10 p-10 text-center">
-            <h2 className="text-xl font-bold">Conectá tu cuenta de Google</h2>
-            <p className="mx-auto mt-2 max-w-md text-sm text-brand-foreground/65">
-              Para leer y editar la planilla de clientes necesitamos tu autorización. Se abre una ventana de Google y volvés acá al terminar.
-            </p>
-            <button onClick={connectGoogle} className="mt-6 h-11 rounded-full bg-orange px-6 text-sm font-bold text-orange-foreground">
-              Conectar Google
-            </button>
-            <button onClick={load} className="ml-3 h-11 rounded-full border border-brand-foreground/20 px-6 text-sm font-bold hover:bg-brand-foreground/10">
-              Ya la conecté
-            </button>
-            {error && <p role="alert" className="mt-4 text-sm text-red-300">{error}</p>}
-          </section>
-        ) : (
-          <>
+        <>
             <section className="mb-6 grid gap-4 sm:grid-cols-3">
               <Stat label="Clientes totales" value={clients.length} icon={<UserRound />} />
               <Stat label="Servidores distintos" value={servers.length} icon={<Server />} />
@@ -205,8 +175,7 @@ export function ClientsDashboard() {
                 )}
               </div>
             </section>
-          </>
-        )}
+        </>
       </div>
 
       {isFormOpen && (

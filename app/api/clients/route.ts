@@ -1,60 +1,47 @@
 import { NextResponse } from 'next/server'
-import { UserAuthorizationRequiredError } from '@vercel/connect'
 import { getAdminSession } from '@/lib/admin-session'
-import { COLUMNS, type ClientInput } from '@/lib/clients-shared'
-import { SheetsError, createClient, deleteClient, listClients, updateClient } from '@/lib/google-sheets'
+import { supabaseAdmin, toClient, toRow, isSupabaseConfigured } from '@/lib/supabase-admin'
 
 export const dynamic = 'force-dynamic'
 
-function parseInput(body: Record<string, unknown>): ClientInput {
-  const input = Object.fromEntries(
-    COLUMNS.map((column) => [column, typeof body[column] === 'string' ? (body[column] as string).trim().slice(0, 500) : '']),
-  ) as ClientInput
-  if (!input.nombre || !input.apellido) throw new SheetsError('Nombre y apellido son obligatorios', 400)
-  return input
+async function guard() {
+  if (!(await getAdminSession())) return NextResponse.json({ error: 'No autorizado' }, { status: 401 })
+  if (!isSupabaseConfigured()) return NextResponse.json({ error: 'Supabase no está configurado' }, { status: 503 })
+  return null
 }
 
-function parseRow(body: Record<string, unknown>) {
-  const row = Number(body.row)
-  const expected = typeof body.expected === 'string' ? body.expected : ''
-  if (!Number.isInteger(row) || row < 2) throw new SheetsError('Fila inválida', 400)
-  return { row, expected }
+export async function GET() {
+  const denied = await guard()
+  if (denied) return denied
+  const { data, error } = await supabaseAdmin.from('clients').select('id,nombre,apellido,mail,telefono,servidor,base_datos,plan').order('created_at', { ascending: false })
+  if (error) return NextResponse.json({ error: 'No se pudieron cargar los clientes' }, { status: 500 })
+  return NextResponse.json((data ?? []).map(toClient))
 }
 
-async function handle(action: (userId: string, body: Record<string, unknown>) => Promise<unknown>, request?: Request, status = 200) {
-  const session = await getAdminSession()
-  if (!session) return NextResponse.json({ error: 'No autorizado' }, { status: 401 })
-  try {
-    const body = request ? ((await request.json()) as Record<string, unknown>) : {}
-    const result = await action(session.id, body)
-    return NextResponse.json(result ?? { ok: true }, { status, headers: { 'Cache-Control': 'no-store' } })
-  } catch (error) {
-    if (error instanceof UserAuthorizationRequiredError) {
-      return NextResponse.json({ error: 'Conectá tu cuenta de Google', code: 'google_authorization_required' }, { status: 428 })
-    }
-    if (error instanceof SheetsError) return NextResponse.json({ error: error.message }, { status: error.status === 401 ? 502 : error.status })
-    return NextResponse.json({ error: 'No se pudo completar la operación' }, { status: 500 })
-  }
+export async function POST(request: Request) {
+  const denied = await guard()
+  if (denied) return denied
+  const input = await request.json()
+  const { data, error } = await supabaseAdmin.from('clients').insert(toRow(input)).select('id,nombre,apellido,mail,telefono,servidor,base_datos,plan').single()
+  if (error) return NextResponse.json({ error: 'No se pudo crear el cliente' }, { status: 500 })
+  return NextResponse.json(toClient(data), { status: 201 })
 }
 
-export function GET() {
-  return handle((userId) => listClients(userId))
+export async function PUT(request: Request) {
+  const denied = await guard()
+  if (denied) return denied
+  const input = await request.json()
+  const { row, ...fields } = input
+  const { data, error } = await supabaseAdmin.from('clients').update(toRow(fields)).eq('id', row).select('id,nombre,apellido,mail,telefono,servidor,base_datos,plan').single()
+  if (error) return NextResponse.json({ error: 'No se pudo actualizar el cliente' }, { status: 500 })
+  return NextResponse.json(toClient(data))
 }
 
-export function POST(request: Request) {
-  return handle((userId, body) => createClient(userId, parseInput(body)), request, 201)
-}
-
-export function PUT(request: Request) {
-  return handle((userId, body) => {
-    const { row, expected } = parseRow(body)
-    return updateClient(userId, row, expected, parseInput(body))
-  }, request)
-}
-
-export function DELETE(request: Request) {
-  return handle((userId, body) => {
-    const { row, expected } = parseRow(body)
-    return deleteClient(userId, row, expected)
-  }, request)
+export async function DELETE(request: Request) {
+  const denied = await guard()
+  if (denied) return denied
+  const { row } = await request.json()
+  const { error } = await supabaseAdmin.from('clients').delete().eq('id', row)
+  if (error) return NextResponse.json({ error: 'No se pudo eliminar el cliente' }, { status: 500 })
+  return NextResponse.json({ ok: true })
 }
