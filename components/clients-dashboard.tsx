@@ -123,8 +123,6 @@ export function ClientsDashboard() {
               <ArrowLeft className="size-4" />
               Panel de infraestructura
             </Link>
-            <h1 className="text-3xl font-black tracking-tight md:text-5xl">Clientes</h1>
-            <p className="mt-2 text-sm text-brand-foreground/65">Sincronizado en vivo con Supabase.</p>
           </div>
           <div className="flex flex-wrap items-center gap-2">
             <button onClick={load} className="inline-flex h-11 items-center gap-2 rounded-full border border-brand-foreground/20 px-4 text-sm font-bold hover:bg-brand-foreground/10">
