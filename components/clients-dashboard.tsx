@@ -293,7 +293,7 @@ function ClientRow({ client, onOpen, onEdit, onDelete }: { client: SheetClient; 
       tabIndex={0}
       onClick={onOpen}
       onKeyDown={(event) => { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); onOpen() } }}
-      className="grid cursor-pointer grid-cols-2 items-start gap-x-4 gap-y-3 p-4 transition-colors hover:bg-brand-foreground/5 focus:outline-none focus:ring-2 focus:ring-orange/60 sm:gap-4 sm:p-5 md:grid-cols-[1.35fr_1fr_1.2fr_1fr_1fr_1fr_auto] md:items-center"
+      className="grid cursor-pointer grid-cols-2 items-start gap-x-4 gap-y-3 p-4 transition-colors hover:bg-brand-foreground/5 focus:outline-none focus:ring-2 focus:ring-orange/60 sm:gap-4 sm:p-5 md:grid-cols-[1.35fr_1fr_1.2fr_1fr_1fr_1fr_auto] md:items-start"
     >
       <div className="col-span-2 min-w-0 md:col-span-1">
         <div className="font-bold">{client.nombre} {client.apellido}</div>
