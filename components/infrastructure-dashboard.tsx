@@ -82,7 +82,7 @@ export default function Page() {
 
   return <main className="min-h-screen bg-brand text-brand-foreground" style={{ backgroundImage: 'linear-gradient(rgba(255,255,255,.055) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,.055) 1px, transparent 1px)', backgroundSize: '42px 42px' }}>
     <div className="relative overflow-visible bg-transparent text-brand-foreground">
-      <div className="relative mx-auto max-w-7xl px-6 py-12 md:px-10 md:py-16">
+      <div className="relative mx-auto max-w-7xl px-6 pb-4 pt-12 md:px-10 md:pb-6 md:pt-16">
         <div className={`${hasScrolled ? 'fixed right-5 top-5 z-50' : 'absolute right-6 top-12 md:right-10 md:top-16'} flex items-center gap-2`}>
           <button onClick={() => load()} aria-label={loading ? 'Sincronizando' : 'Actualizar datos'} className="inline-flex h-10 items-center justify-center gap-2 rounded-full bg-orange px-5 text-sm font-semibold text-orange-foreground transition-all duration-300 hover:-translate-y-0.5 disabled:opacity-50" disabled={loading}><RefreshCw className={`size-4 ${loading ? 'animate-spin' : ''}`} /><span>{loading ? 'Sincronizando' : 'Actualizar'}</span></button>
           <LogoutButton className="h-10 px-4 text-sm" />
