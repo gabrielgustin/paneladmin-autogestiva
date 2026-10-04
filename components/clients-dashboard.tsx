@@ -68,10 +68,8 @@ export function ClientsDashboard() {
   const plans = useMemo(() => [...new Set(clients.map((client) => client.plan).filter(Boolean))], [clients])
   const servers = useMemo(() => [...new Set(clients.map((client) => client.servidor).filter(Boolean))], [clients])
   const monthlyRevenue = useMemo(() => clients.reduce((total, client) => {
-    const amount = Number.parseInt(client.plan.replace(/[^0-9]/g, ''), 10) || 0
-    if (client.metodoPago === 'Pago anual') return total + amount / 12
-    if (client.metodoPago === 'Pago semestral') return total + amount / 6
-    return total + amount
+    const monthlyAmount = Number.parseInt(client.plan.replace(/[^0-9]/g, ''), 10) || 0
+    return total + monthlyAmount
   }, 0), [clients])
   const nextExpiringDomain = useMemo(() => {
     const today = new Date()
