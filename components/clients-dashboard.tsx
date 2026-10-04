@@ -7,10 +7,24 @@ import { ArrowLeft, ChevronDown, Database, Pencil, Plus, RefreshCw, Search, Serv
 import Link from 'next/link'
 import { COLUMN_LABELS, fingerprint, type ClientInput, type SheetClient } from '@/lib/clients-shared'
 
-const emptyForm: ClientInput = { nombre: '', apellido: '', empresa: '', dominio: '', dominioVencimiento: '', mail: '', telefono: '', servidor: '', baseDatos: '', plan: '' }
+const emptyForm: ClientInput = { nombre: '', apellido: '', empresa: '', dominio: '', dominioVencimiento: '', mail: '', telefono: '', servidor: '', baseDatos: '', plan: '', metodoPago: '', ultimoPago: '', proximoPago: '' }
+const paymentOptions = ['Débito Automático', 'Pago mensual', 'Pago semestral', 'Pago anual']
 const planOptions = ['$10.000', '$15.000', '$20.000', '$30.000', '$40.000', '$50.000']
 const inputClass =
   'h-11 w-full rounded-lg border border-brand-foreground/15 bg-brand-foreground/10 px-3 text-sm text-brand-foreground outline-none placeholder:text-brand-foreground/40 focus:border-orange'
+
+function nextPaymentDate(method: string, lastPayment: string) {
+  if (!lastPayment) return ''
+  const date = new Date(`${lastPayment}T12:00:00`)
+  if (method === 'Débito Automático') {
+    const next = new Date(date)
+    next.setMonth(next.getMonth() + (date.getDate() >= 10 ? 1 : 0), 10)
+    return next.toISOString().slice(0, 10)
+  }
+  const months = method === 'Pago semestral' ? 6 : method === 'Pago anual' ? 12 : 1
+  date.setMonth(date.getMonth() + months)
+  return date.toISOString().slice(0, 10)
+}
 
 function toInput(client: SheetClient): ClientInput {
   const { row: _row, ...input } = client
@@ -75,7 +89,11 @@ export function ClientsDashboard() {
     setIsFormOpen(true)
   }
   function update(field: keyof ClientInput, value: string) {
-    setForm((current) => ({ ...current, [field]: value }))
+    setForm((current) => {
+      const next = { ...current, [field]: value }
+      if (field === 'metodoPago' || field === 'ultimoPago') next.proximoPago = nextPaymentDate(next.metodoPago, next.ultimoPago)
+      return next
+    })
   }
 
   async function save(event: React.FormEvent) {
@@ -190,23 +208,23 @@ export function ClientsDashboard() {
               {(Object.keys(emptyForm) as (keyof ClientInput)[]).map((field) => (
                 <label key={field} className="text-xs font-semibold text-brand-foreground/65">
                   {COLUMN_LABELS[field]}
-                  {field === 'plan' ? (
+                  {field === 'plan' || field === 'metodoPago' ? (
                     <div className="relative mt-2">
                       <select
                         required
-                        value={form.plan}
-                        onChange={(e) => update('plan', e.target.value)}
+                        value={form[field]}
+                        onChange={(e) => update(field, e.target.value)}
                         className={`${inputClass} appearance-none pr-10`}
                       >
-                        <option value="">Seleccioná un plan</option>
-                        {planOptions.map((option) => <option key={option} value={option}>{option}</option>)}
+                        <option value="">Seleccioná {field === 'plan' ? 'un plan' : 'un método'}</option>
+                        {(field === 'plan' ? planOptions : paymentOptions).map((option) => <option key={option} value={option}>{option}</option>)}
                       </select>
                       <ChevronDown className="pointer-events-none absolute right-3 top-1/2 size-4 -translate-y-1/2 text-brand-foreground/70" aria-hidden="true" />
                     </div>
                   ) : (
                     <input
                       required={field === 'nombre' || field === 'apellido'}
-                      type={field === 'mail' ? 'email' : field === 'dominioVencimiento' ? 'date' : 'text'}
+                      type={field === 'mail' ? 'email' : ['dominioVencimiento', 'ultimoPago', 'proximoPago'].includes(field) ? 'date' : 'text'}
                       value={form[field]}
                       onChange={(e) => update(field, e.target.value)}
                       className={`${inputClass} mt-2`}
@@ -259,6 +277,9 @@ function ClientDetails({ client, onClose }: { client: SheetClient; onClose: () =
     ['Servidor', client.servidor],
     ['Base de datos', client.baseDatos],
     ['Plan', client.plan],
+    ['Método de pago', client.metodoPago],
+    ['Último pago', client.ultimoPago],
+    ['Próximo pago', client.proximoPago],
   ]
 
   return (
@@ -293,7 +314,7 @@ function ClientRow({ client, onOpen, onEdit, onDelete }: { client: SheetClient; 
       tabIndex={0}
       onClick={onOpen}
       onKeyDown={(event) => { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); onOpen() } }}
-      className="grid cursor-pointer grid-cols-2 items-start gap-x-4 gap-y-3 p-4 transition-colors hover:bg-brand-foreground/5 focus:outline-none focus:ring-2 focus:ring-orange/60 sm:gap-4 sm:p-5 md:grid-cols-[1.35fr_1fr_1.2fr_1fr_1fr_1fr_auto] md:items-start"
+      className="grid cursor-pointer grid-cols-2 items-start gap-x-4 gap-y-3 p-4 transition-colors hover:bg-brand-foreground/5 focus:outline-none focus:ring-2 focus:ring-orange/60 sm:gap-4 sm:p-5 md:grid-cols-[1.35fr_1fr_1.2fr_1fr_1fr_1fr_1.1fr_1.3fr_auto] md:items-start"
     >
       <div className="col-span-2 min-w-0 md:col-span-1">
         <div className="font-bold">{client.nombre} {client.apellido}</div>
@@ -319,6 +340,11 @@ function ClientRow({ client, onOpen, onEdit, onDelete }: { client: SheetClient; 
       <div>
         <div className="text-xs text-brand-foreground/50">Plan</div>
         <div className="font-semibold text-orange">{client.plan || '—'}</div>
+      </div>
+      <div>
+        <div className="text-xs text-brand-foreground/50">Método de pago</div>
+        <div className="truncate text-sm font-semibold">{client.metodoPago || '—'}</div>
+        <div className="mt-1 text-[11px] text-brand-foreground/45">Próximo: {client.proximoPago || '—'}</div>
       </div>
       <div className="col-span-2 flex gap-2 md:col-span-1 md:justify-end" onClick={(event) => event.stopPropagation()}>
         <button onClick={onEdit} className="rounded-lg border border-brand-foreground/15 p-2 text-brand-foreground/70 hover:bg-brand-foreground/10" aria-label={`Editar ${client.nombre}`}>

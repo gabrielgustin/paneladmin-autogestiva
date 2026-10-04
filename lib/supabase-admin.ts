@@ -18,14 +18,17 @@ export type SupabaseClientRow = {
   servidor: string | null
   base_datos: string | null
   plan: string | null
+  metodo_pago: string | null
+  ultimo_pago: string | null
+  proximo_pago: string | null
 }
 
 export function toClient(row: SupabaseClientRow) {
-  return { row: row.id, nombre: row.nombre, apellido: row.apellido, empresa: row.empresa ?? '', dominio: row.dominio ?? '', dominioVencimiento: row.dominio_vencimiento ?? '', mail: row.mail ?? '', telefono: row.telefono ?? '', servidor: row.servidor ?? '', baseDatos: row.base_datos ?? '', plan: row.plan ?? '' }
+  return { row: row.id, nombre: row.nombre, apellido: row.apellido, empresa: row.empresa ?? '', dominio: row.dominio ?? '', dominioVencimiento: row.dominio_vencimiento ?? '', mail: row.mail ?? '', telefono: row.telefono ?? '', servidor: row.servidor ?? '', baseDatos: row.base_datos ?? '', plan: row.plan ?? '', metodoPago: row.metodo_pago ?? '', ultimoPago: row.ultimo_pago ?? '', proximoPago: row.proximo_pago ?? '' }
 }
 
 export function toRow(input: Record<string, string>) {
-  return { nombre: input.nombre, apellido: input.apellido, empresa: input.empresa || null, dominio: input.dominio || null, dominio_vencimiento: input.dominioVencimiento || null, mail: input.mail || null, telefono: input.telefono || null, servidor: input.servidor || null, base_datos: input.baseDatos || null, plan: input.plan || null, updated_at: new Date().toISOString() }
+  return { nombre: input.nombre, apellido: input.apellido, empresa: input.empresa || null, dominio: input.dominio || null, dominio_vencimiento: input.dominioVencimiento || null, mail: input.mail || null, telefono: input.telefono || null, servidor: input.servidor || null, base_datos: input.baseDatos || null, plan: input.plan || null, metodo_pago: input.metodoPago || null, ultimo_pago: input.ultimoPago || null, proximo_pago: input.proximoPago || null, updated_at: new Date().toISOString() }
 }
 
 export function isSupabaseConfigured() {

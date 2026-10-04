@@ -1,4 +1,4 @@
-export const COLUMNS = ['nombre', 'apellido', 'empresa', 'dominio', 'dominioVencimiento', 'mail', 'telefono', 'servidor', 'baseDatos', 'plan'] as const
+export const COLUMNS = ['nombre', 'apellido', 'empresa', 'dominio', 'dominioVencimiento', 'mail', 'telefono', 'servidor', 'baseDatos', 'plan', 'metodoPago', 'ultimoPago', 'proximoPago'] as const
 
 export type ClientColumn = (typeof COLUMNS)[number]
 export type ClientInput = Record<ClientColumn, string>
@@ -15,6 +15,9 @@ export const COLUMN_LABELS: Record<ClientColumn, string> = {
   servidor: 'Servidor',
   baseDatos: 'Base de Datos',
   plan: 'Plan',
+  metodoPago: 'Método de pago',
+  ultimoPago: 'Último pago',
+  proximoPago: 'Próximo pago',
 }
 
 export function fingerprint(values: ClientInput) {
