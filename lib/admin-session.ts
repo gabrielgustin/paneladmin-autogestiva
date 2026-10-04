@@ -1,8 +1,8 @@
 import { createHash, createHmac, timingSafeEqual } from 'node:crypto'
 import { cookies } from 'next/headers'
 
-export const SESSION_COOKIE = 'admin_session'
-const SESSION_SECONDS = 60 * 60 * 8
+export const SESSION_COOKIE = 'admin_session_v2'
+const SESSION_SECONDS = 60 * 60 * 2
 
 function secret() {
   const value = process.env.BETTER_AUTH_SECRET
@@ -61,13 +61,15 @@ export async function getAdminSession() {
 }
 
 // The v0 preview renders the app in a cross-site iframe, which needs SameSite=None.
-export function sessionCookieOptions(maxAge = SESSION_SECONDS) {
+// Without maxAge this is a browser-session cookie: it is discarded when the browser closes,
+// so the login is requested again on every new visit. Pass 0 to delete it on logout.
+export function sessionCookieOptions(maxAge?: number) {
   const isDev = process.env.NODE_ENV === 'development'
   return {
     httpOnly: true,
     secure: true,
     sameSite: (isDev ? 'none' : 'lax') as 'none' | 'lax',
     path: '/',
-    maxAge,
+    ...(maxAge === undefined ? {} : { maxAge }),
   }
 }
