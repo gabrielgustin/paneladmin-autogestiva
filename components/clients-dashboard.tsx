@@ -25,6 +25,7 @@ export function ClientsDashboard() {
   const [plan, setPlan] = useState('all')
   const [servidor, setServidor] = useState('all')
   const [editing, setEditing] = useState<SheetClient | null>(null)
+  const [selectedClient, setSelectedClient] = useState<SheetClient | null>(null)
   const [isFormOpen, setIsFormOpen] = useState(false)
   const [form, setForm] = useState<ClientInput>(emptyForm)
   const [saving, setSaving] = useState(false)
@@ -162,12 +163,16 @@ export function ClientsDashboard() {
                 ) : filtered.length === 0 ? (
                   <div className="p-12 text-center text-sm text-brand-foreground/60">No hay clientes para mostrar. Creá uno con “Nuevo cliente”.</div>
                 ) : (
-                  filtered.map((client) => <ClientRow key={client.row} client={client} onEdit={() => openEdit(client)} onDelete={() => remove(client)} />)
+                  filtered.map((client) => <ClientRow key={client.row} client={client} onOpen={() => setSelectedClient(client)} onEdit={() => openEdit(client)} onDelete={() => remove(client)} />)
                 )}
               </div>
             </section>
         </>
       </div>
+
+      {selectedClient && (
+        <ClientDetails client={selectedClient} onClose={() => setSelectedClient(null)} />
+      )}
 
       {isFormOpen && (
         <div className="fixed inset-0 z-20 flex items-start justify-center overflow-y-auto bg-black/60 p-2 sm:p-4 md:p-10">
@@ -243,9 +248,53 @@ function Stat({ label, value, icon }: { label: string; value: number; icon: Reac
   )
 }
 
-function ClientRow({ client, onEdit, onDelete }: { client: SheetClient; onEdit: () => void; onDelete: () => void }) {
+function ClientDetails({ client, onClose }: { client: SheetClient; onClose: () => void }) {
+  const details = [
+    ['Nombre', `${client.nombre} ${client.apellido}`],
+    ['Empresa', client.empresa],
+    ['Dominio', client.dominio],
+    ['Vencimiento del dominio', client.dominioVencimiento],
+    ['Mail', client.mail],
+    ['Teléfono', client.telefono],
+    ['Servidor', client.servidor],
+    ['Base de datos', client.baseDatos],
+    ['Plan', client.plan],
+  ]
+
   return (
-    <div className="grid grid-cols-2 items-start gap-x-4 gap-y-3 p-4 sm:gap-4 sm:p-5 md:grid-cols-[1.35fr_1fr_1.2fr_1fr_1fr_1fr_auto] md:items-center">
+    <div className="fixed inset-0 z-30 flex items-center justify-center overflow-y-auto bg-brand/70 p-3 backdrop-blur-sm sm:p-6" onMouseDown={(event) => { if (event.target === event.currentTarget) onClose() }}>
+      <section role="dialog" aria-modal="true" aria-labelledby="client-details-title" className="w-full max-w-2xl rounded-2xl border border-brand-foreground/15 bg-brand p-5 shadow-2xl sm:p-7">
+        <div className="mb-6 flex items-start justify-between gap-4">
+          <div>
+            <div className="text-xs font-bold uppercase tracking-[0.16em] text-orange">Detalle del cliente</div>
+            <h2 id="client-details-title" className="mt-1 text-2xl font-bold text-balance">{client.nombre} {client.apellido}</h2>
+          </div>
+          <button type="button" aria-label="Cerrar detalle" onClick={onClose} className="rounded-full p-2 text-brand-foreground/60 hover:bg-brand-foreground/10">
+            <X className="size-5" />
+          </button>
+        </div>
+        <dl className="grid gap-x-5 gap-y-4 sm:grid-cols-2">
+          {details.map(([label, value]) => (
+            <div key={label} className="min-w-0 rounded-xl border border-brand-foreground/10 bg-brand-foreground/5 p-3">
+              <dt className="text-xs font-semibold text-brand-foreground/50">{label}</dt>
+              <dd className="mt-1 truncate text-sm font-medium">{value || '—'}</dd>
+            </div>
+          ))}
+        </dl>
+      </section>
+    </div>
+  )
+}
+
+function ClientRow({ client, onOpen, onEdit, onDelete }: { client: SheetClient; onOpen: () => void; onEdit: () => void; onDelete: () => void }) {
+  return (
+    <div
+      role="button"
+      tabIndex={0}
+      onClick={onOpen}
+      onKeyDown={(event) => { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); onOpen() } }}
+      className="grid cursor-pointer grid-cols-2 items-start gap-x-4 gap-y-3 p-4 transition-colors hover:bg-brand-foreground/5 focus:outline-none focus:ring-2 focus:ring-orange/60 sm:gap-4 sm:p-5 md:grid-cols-[1.35fr_1fr_1.2fr_1fr_1fr_1fr_auto] md:items-center"
+    >
       <div className="col-span-2 min-w-0 md:col-span-1">
         <div className="font-bold">{client.nombre} {client.apellido}</div>
         <div className="mt-1 truncate text-xs text-brand-foreground/55">{client.mail || 'Sin mail'} · {client.telefono || 'Sin teléfono'}</div>
@@ -271,7 +320,7 @@ function ClientRow({ client, onEdit, onDelete }: { client: SheetClient; onEdit: 
         <div className="text-xs text-brand-foreground/50">Plan</div>
         <div className="font-semibold text-orange">{client.plan || '—'}</div>
       </div>
-      <div className="col-span-2 flex gap-2 md:col-span-1 md:justify-end">
+      <div className="col-span-2 flex gap-2 md:col-span-1 md:justify-end" onClick={(event) => event.stopPropagation()}>
         <button onClick={onEdit} className="rounded-lg border border-brand-foreground/15 p-2 text-brand-foreground/70 hover:bg-brand-foreground/10" aria-label={`Editar ${client.nombre}`}>
           <Pencil className="size-4" />
         </button>
