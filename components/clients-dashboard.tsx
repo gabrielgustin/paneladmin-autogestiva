@@ -57,9 +57,6 @@ function uniqueValues(values: string[]) {
   return [...new Set(values.map((value) => value.trim()).filter(Boolean))]
 }
 
-function formatDate(iso: string) {
-  return iso ? iso.split('-').reverse().join('/') : '—'
-}
 
 export function ClientsDashboard() {
   const router = useRouter()
@@ -280,7 +277,7 @@ export function ClientsDashboard() {
                   Nuevo cliente
                 </button>
               </div>
-              <div className="hidden border-b border-brand-foreground/10 px-5 py-3 text-xs font-semibold text-brand-foreground/50 md:grid md:grid-cols-[minmax(0,1.35fr)_minmax(0,1fr)_minmax(0,1fr)_minmax(0,1.2fr)_minmax(0,1fr)_minmax(0,1fr)_minmax(0,1fr)_minmax(0,1.3fr)_auto] md:items-center md:gap-4">
+              <div className="hidden border-b border-brand-foreground/10 px-5 py-3 text-xs font-semibold text-brand-foreground/50 md:grid md:grid-cols-[minmax(0,1.35fr)_minmax(0,1fr)_minmax(0,1fr)_minmax(0,1.2fr)_minmax(0,1fr)_minmax(0,1fr)_minmax(0,1.3fr)_auto] md:items-center md:gap-4">
                 <div>Cliente</div>
                 <div>Empresa</div>
                 <div>Producto</div>
@@ -288,7 +285,6 @@ export function ClientsDashboard() {
                 <div>Servidor</div>
                 <div>Base de datos</div>
                 <div>Plan</div>
-                <div>Próximo pago</div>
                 <div />
               </div>
               <div className="divide-y divide-brand-foreground/10">
@@ -444,7 +440,7 @@ function clientLabel(nombre: string) {
   return feminineNames.has(normalizeText(nombre)) ? 'Clienta' : 'Cliente'
 }
 
-const rowGridClass = 'grid grid-cols-2 items-start gap-x-4 gap-y-3 p-4 sm:gap-4 sm:p-5 md:grid-cols-[minmax(0,1.35fr)_minmax(0,1fr)_minmax(0,1fr)_minmax(0,1.2fr)_minmax(0,1fr)_minmax(0,1fr)_minmax(0,1fr)_minmax(0,1.3fr)_auto]'
+const rowGridClass = 'grid grid-cols-2 items-start gap-x-4 gap-y-3 p-4 sm:gap-4 sm:p-5 md:grid-cols-[minmax(0,1.35fr)_minmax(0,1fr)_minmax(0,1fr)_minmax(0,1.2fr)_minmax(0,1fr)_minmax(0,1fr)_minmax(0,1.3fr)_auto]'
 
 function summarize(values: string[], plural: string) {
   if (values.length === 0) return '—'
@@ -459,8 +455,6 @@ function GroupRow({ entry, expanded, canMoveUp, canMoveDown, onToggle, onMoveUp,
   const servers = uniqueValues(members.map((member) => member.servidor))
   const databases = uniqueValues(members.map((member) => member.baseDatos))
   const totalPlan = members.reduce((total, member) => total + planAmount(member.plan), 0)
-  const nextDomainExpiry = members.map((member) => member.dominioVencimiento).filter(Boolean).sort()[0] ?? ''
-  const nextPayment = members.map((member) => member.proximoPago).filter(Boolean).sort()[0] ?? ''
 
   return (
     <div>
@@ -481,30 +475,13 @@ function GroupRow({ entry, expanded, canMoveUp, canMoveDown, onToggle, onMoveUp,
           <div className="truncate text-sm font-semibold">{members[0].empresa}</div>
           <div className="mt-1 text-[11px] text-orange">{members.length} servicios</div>
         </div>
-        <div className="min-w-0">
-          <div className="text-xs text-brand-foreground/50">Producto</div>
-          <div className="truncate text-sm" title={products.join(', ')}>{products.length ? products.join(', ') : '—'}</div>
-        </div>
-        <div className="min-w-0">
-          <div className="text-xs text-brand-foreground/50">Dominio</div>
-          <div className="truncate text-sm" title={domains.join(', ')}>{summarize(domains, 'dominios')}</div>
-          <div className="mt-1 text-[11px] text-brand-foreground/45">Vence: {formatDate(nextDomainExpiry)}</div>
-        </div>
-        <div className="min-w-0">
-          <div className="text-xs text-brand-foreground/50">Servidor</div>
-          <div className="truncate text-sm" title={servers.join(', ')}>{servers.length ? servers.join(', ') : '—'}</div>
-        </div>
-        <div className="min-w-0">
-          <div className="text-xs text-brand-foreground/50">Base de datos</div>
-          <div className="truncate text-sm" title={databases.join(', ')}>{databases.length ? databases.join(', ') : '—'}</div>
-        </div>
+        <div className="min-w-0" aria-hidden="true" />
+        <div className="min-w-0" aria-hidden="true" />
+        <div className="min-w-0" aria-hidden="true" />
+        <div className="min-w-0" aria-hidden="true" />
         <div className="min-w-0">
           <div className="text-xs text-brand-foreground/50">Plan (total)</div>
           <div className="font-semibold text-orange">{totalPlan ? `$${totalPlan.toLocaleString('es-AR')}` : '—'}</div>
-        </div>
-        <div className="min-w-0">
-          <div className="text-xs text-brand-foreground/50">Próximo pago</div>
-          <div className="truncate text-sm">{formatDate(nextPayment)}</div>
         </div>
         <div className="col-span-2 flex items-center gap-1 md:col-span-1 md:justify-end" onClick={(event) => event.stopPropagation()}>
           <div className="mr-1 flex flex-col">
@@ -528,7 +505,7 @@ function ClientRow({ client, canMoveUp, canMoveDown, onMoveUp, onMoveDown, onOpe
       tabIndex={0}
       onClick={onOpen}
       onKeyDown={(event) => { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); onOpen() } }}
-      className="grid cursor-pointer grid-cols-2 items-start gap-x-4 gap-y-3 p-4 transition-colors hover:bg-brand-foreground/5 focus:outline-none focus:ring-2 focus:ring-orange/60 sm:gap-4 sm:p-5 md:grid-cols-[minmax(0,1.35fr)_minmax(0,1fr)_minmax(0,1fr)_minmax(0,1.2fr)_minmax(0,1fr)_minmax(0,1fr)_minmax(0,1fr)_minmax(0,1.3fr)_auto] md:items-start"
+      className="grid cursor-pointer grid-cols-2 items-start gap-x-4 gap-y-3 p-4 transition-colors hover:bg-brand-foreground/5 focus:outline-none focus:ring-2 focus:ring-orange/60 sm:gap-4 sm:p-5 md:grid-cols-[minmax(0,1.35fr)_minmax(0,1fr)_minmax(0,1fr)_minmax(0,1.2fr)_minmax(0,1fr)_minmax(0,1fr)_minmax(0,1.3fr)_auto] md:items-start"
     >
       <div className="col-span-2 min-w-0 md:col-span-1">
         <div className="text-xs text-brand-foreground/50">{clientLabel(client.nombre)}</div>
@@ -559,10 +536,6 @@ function ClientRow({ client, canMoveUp, canMoveDown, onMoveUp, onMoveDown, onOpe
       <div className="min-w-0">
         <div className="text-xs text-brand-foreground/50">Plan</div>
         <div className="font-semibold text-orange">{client.plan || '—'}</div>
-      </div>
-      <div className="min-w-0">
-        <div className="text-xs text-brand-foreground/50">Próximo pago</div>
-        <div className="truncate text-sm">{formatDate(client.proximoPago)}</div>
       </div>
       <div className="col-span-2 flex items-center gap-1 md:col-span-1 md:justify-end" onClick={(event) => event.stopPropagation()}>
         <div className="mr-1 flex flex-col">
