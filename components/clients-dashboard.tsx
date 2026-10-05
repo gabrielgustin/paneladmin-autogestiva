@@ -279,7 +279,7 @@ export function ClientsDashboard() {
                   Nuevo cliente
                 </button>
               </div>
-              <div className="hidden border-b border-brand-foreground/10 px-5 py-3 text-xs font-semibold text-brand-foreground/50 md:grid md:grid-cols-[minmax(0,1.35fr)_minmax(0,1fr)_minmax(0,1fr)_minmax(0,1.2fr)_minmax(0,1fr)_minmax(0,1fr)_minmax(0,1.3fr)_8rem] md:items-center md:gap-4">
+              <div className="hidden border-b border-brand-foreground/10 px-5 py-3 text-xs font-semibold text-brand-foreground/50 md:grid md:grid-cols-[minmax(0,1.35fr)_minmax(0,1fr)_minmax(0,1fr)_minmax(0,1.5fr)_minmax(0,0.9fr)_minmax(0,1fr)_minmax(0,1.3fr)_8rem] md:items-center md:gap-4">
                 <div>Cliente</div>
                 <div>Empresa</div>
                 <div>Producto</div>
@@ -442,7 +442,7 @@ function clientLabel(nombre: string) {
   return feminineNames.has(normalizeText(nombre)) ? 'Clienta' : 'Cliente'
 }
 
-const rowGridClass = 'grid grid-cols-2 items-start gap-x-4 gap-y-3 p-4 sm:gap-4 sm:p-5 md:grid-cols-[minmax(0,1.35fr)_minmax(0,1fr)_minmax(0,1fr)_minmax(0,1.2fr)_minmax(0,1fr)_minmax(0,1fr)_minmax(0,1.3fr)_8rem] [&>*]:self-start'
+const rowGridClass = 'grid grid-cols-2 items-start gap-x-4 gap-y-3 p-4 sm:gap-4 sm:p-5 md:grid-cols-[minmax(0,1.35fr)_minmax(0,1fr)_minmax(0,1fr)_minmax(0,1.5fr)_minmax(0,0.9fr)_minmax(0,1fr)_minmax(0,1.3fr)_8rem] [&>*]:self-start'
 
 function summarize(values: string[], plural: string) {
   if (values.length === 0) return '—'
@@ -507,7 +507,7 @@ function ClientRow({ client, canMoveUp, canMoveDown, onMoveUp, onMoveDown, onOpe
       tabIndex={0}
       onClick={onOpen}
       onKeyDown={(event) => { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); onOpen() } }}
-      className="grid cursor-pointer grid-cols-2 items-start gap-x-4 gap-y-3 p-4 transition-colors hover:bg-brand-foreground/5 focus:outline-none focus:ring-2 focus:ring-orange/60 sm:gap-4 sm:p-5 md:grid-cols-[minmax(0,1.35fr)_minmax(0,1fr)_minmax(0,1fr)_minmax(0,1.2fr)_minmax(0,1fr)_minmax(0,1fr)_minmax(0,1.3fr)_8rem] md:items-start"
+      className="grid cursor-pointer grid-cols-2 items-start gap-x-4 gap-y-3 p-4 transition-colors hover:bg-brand-foreground/5 focus:outline-none focus:ring-2 focus:ring-orange/60 sm:gap-4 sm:p-5 md:grid-cols-[minmax(0,1.35fr)_minmax(0,1fr)_minmax(0,1fr)_minmax(0,1.5fr)_minmax(0,0.9fr)_minmax(0,1fr)_minmax(0,1.3fr)_8rem] md:items-start"
     >
       <div className="col-span-2 min-w-0 md:col-span-1">
         <div className="text-xs text-brand-foreground/50">{clientLabel(client.nombre)}</div>
