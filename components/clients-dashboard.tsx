@@ -7,7 +7,7 @@ import { ArrowLeft, CalendarClock, ChevronDown, ChevronUp, CircleDollarSign, Dat
 import Link from 'next/link'
 import { COLUMN_LABELS, fingerprint, type ClientInput, type SheetClient } from '@/lib/clients-shared'
 
-const emptyForm: ClientInput = { nombre: '', apellido: '', empresa: '', dominio: '', dominioVencimiento: '', mail: '', telefono: '', servidor: '', baseDatos: '', plan: '', metodoPago: '', ultimoPago: '', proximoPago: '' }
+const emptyForm: ClientInput = { nombre: '', apellido: '', empresa: '', producto: '', dominio: '', dominioVencimiento: '', mail: '', telefono: '', servidor: '', baseDatos: '', plan: '', metodoPago: '', ultimoPago: '', proximoPago: '' }
 const paymentOptions = ['Débito Automático', 'Pago mensual', 'Pago semestral', 'Pago anual']
 const planOptions = ['$10.000', '$15.000', '$20.000', '$30.000', '$40.000', '$50.000']
 const inputClass =
@@ -85,7 +85,7 @@ export function ClientsDashboard() {
   const filtered = useMemo(
     () =>
       clients.filter((client) => {
-        const text = `${client.nombre} ${client.apellido} ${client.empresa} ${client.dominio} ${client.mail} ${client.telefono}`.toLowerCase()
+        const text = `${client.nombre} ${client.apellido} ${client.empresa} ${client.producto} ${client.dominio} ${client.mail} ${client.telefono}`.toLowerCase()
         return text.includes(query.toLowerCase()) && (plan === 'all' || client.plan === plan) && (servidor === 'all' || client.servidor === servidor)
       }),
     [clients, plan, query, servidor],
@@ -219,9 +219,10 @@ export function ClientsDashboard() {
                   Nuevo cliente
                 </button>
               </div>
-              <div className="hidden border-b border-brand-foreground/10 px-5 py-3 text-xs font-semibold text-brand-foreground/50 md:grid md:grid-cols-[minmax(0,1.35fr)_minmax(0,1fr)_minmax(0,1.2fr)_minmax(0,1fr)_minmax(0,1fr)_minmax(0,1fr)_minmax(0,1.1fr)_minmax(0,1.3fr)_auto] md:items-center md:gap-4">
+              <div className="hidden border-b border-brand-foreground/10 px-5 py-3 text-xs font-semibold text-brand-foreground/50 md:grid md:grid-cols-[minmax(0,1.35fr)_minmax(0,1fr)_minmax(0,1fr)_minmax(0,1.2fr)_minmax(0,1fr)_minmax(0,1fr)_minmax(0,1fr)_minmax(0,1.1fr)_minmax(0,1.3fr)_auto] md:items-center md:gap-4">
                 <div>Cliente</div>
                 <div>Empresa</div>
+                <div>Producto</div>
                 <div>Dominio</div>
                 <div>Servidor</div>
                 <div>Base de datos</div>
@@ -328,6 +329,7 @@ function ClientDetails({ client, onClose }: { client: SheetClient; onClose: () =
   const details = [
     ['Nombre', `${client.nombre} ${client.apellido}`],
     ['Empresa', client.empresa],
+    ['Producto', client.producto],
     ['Dominio', client.dominio],
     ['Vencimiento del dominio', client.dominioVencimiento],
     ['Mail', client.mail],
@@ -379,7 +381,7 @@ function ClientRow({ client, canMoveUp, canMoveDown, onMoveUp, onMoveDown, onOpe
       tabIndex={0}
       onClick={onOpen}
       onKeyDown={(event) => { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); onOpen() } }}
-      className="grid cursor-pointer grid-cols-2 items-start gap-x-4 gap-y-3 p-4 transition-colors hover:bg-brand-foreground/5 focus:outline-none focus:ring-2 focus:ring-orange/60 sm:gap-4 sm:p-5 md:grid-cols-[minmax(0,1.35fr)_minmax(0,1fr)_minmax(0,1.2fr)_minmax(0,1fr)_minmax(0,1fr)_minmax(0,1fr)_minmax(0,1.1fr)_minmax(0,1.3fr)_auto] md:items-start"
+      className="grid cursor-pointer grid-cols-2 items-start gap-x-4 gap-y-3 p-4 transition-colors hover:bg-brand-foreground/5 focus:outline-none focus:ring-2 focus:ring-orange/60 sm:gap-4 sm:p-5 md:grid-cols-[minmax(0,1.35fr)_minmax(0,1fr)_minmax(0,1fr)_minmax(0,1.2fr)_minmax(0,1fr)_minmax(0,1fr)_minmax(0,1fr)_minmax(0,1.1fr)_minmax(0,1.3fr)_auto] md:items-start"
     >
       <div className="col-span-2 min-w-0 md:col-span-1">
         <div className="text-xs text-brand-foreground/50">{clientLabel(client.nombre)}</div>
@@ -389,6 +391,10 @@ function ClientRow({ client, canMoveUp, canMoveDown, onMoveUp, onMoveDown, onOpe
       <div className="min-w-0">
         <div className="text-xs text-brand-foreground/50">Empresa</div>
         <div className="truncate text-sm">{client.empresa || '—'}</div>
+      </div>
+      <div className="min-w-0">
+        <div className="text-xs text-brand-foreground/50">Producto</div>
+        <div className="truncate text-sm">{client.producto || '—'}</div>
       </div>
       <div className="min-w-0">
         <div className="text-xs text-brand-foreground/50">Dominio</div>

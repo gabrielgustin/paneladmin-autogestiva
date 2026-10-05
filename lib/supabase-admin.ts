@@ -11,6 +11,7 @@ export type SupabaseClientRow = {
   nombre: string
   apellido: string
   empresa: string | null
+  producto: string | null
   dominio: string | null
   dominio_vencimiento: string | null
   mail: string | null
@@ -25,11 +26,11 @@ export type SupabaseClientRow = {
 }
 
 export function toClient(row: SupabaseClientRow) {
-  return { row: row.id, nombre: row.nombre, apellido: row.apellido, empresa: row.empresa ?? '', dominio: row.dominio ?? '', dominioVencimiento: row.dominio_vencimiento ?? '', mail: row.mail ?? '', telefono: row.telefono ?? '', servidor: row.servidor ?? '', baseDatos: row.base_datos ?? '', plan: row.plan ?? '', metodoPago: row.metodo_pago ?? '', ultimoPago: row.ultimo_pago ?? '', proximoPago: row.proximo_pago ?? '', orden: row.orden ?? 0 }
+  return { row: row.id, nombre: row.nombre, apellido: row.apellido, empresa: row.empresa ?? '', producto: row.producto ?? '', dominio: row.dominio ?? '', dominioVencimiento: row.dominio_vencimiento ?? '', mail: row.mail ?? '', telefono: row.telefono ?? '', servidor: row.servidor ?? '', baseDatos: row.base_datos ?? '', plan: row.plan ?? '', metodoPago: row.metodo_pago ?? '', ultimoPago: row.ultimo_pago ?? '', proximoPago: row.proximo_pago ?? '', orden: row.orden ?? 0 }
 }
 
 export function toRow(input: Record<string, string>) {
-  return { nombre: input.nombre, apellido: input.apellido, empresa: input.empresa || null, dominio: input.dominio || null, dominio_vencimiento: input.dominioVencimiento || null, mail: input.mail || null, telefono: input.telefono || null, servidor: input.servidor || null, base_datos: input.baseDatos || null, plan: input.plan || null, metodo_pago: input.metodoPago || null, ultimo_pago: input.ultimoPago || null, proximo_pago: input.proximoPago || null, updated_at: new Date().toISOString() }
+  return { nombre: input.nombre, apellido: input.apellido, empresa: input.empresa || null, producto: input.producto || null, dominio: input.dominio || null, dominio_vencimiento: input.dominioVencimiento || null, mail: input.mail || null, telefono: input.telefono || null, servidor: input.servidor || null, base_datos: input.baseDatos || null, plan: input.plan || null, metodo_pago: input.metodoPago || null, ultimo_pago: input.ultimoPago || null, proximo_pago: input.proximoPago || null, updated_at: new Date().toISOString() }
 }
 
 export function isSupabaseConfigured() {

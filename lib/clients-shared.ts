@@ -1,4 +1,4 @@
-export const COLUMNS = ['nombre', 'apellido', 'empresa', 'dominio', 'dominioVencimiento', 'mail', 'telefono', 'servidor', 'baseDatos', 'plan', 'metodoPago', 'ultimoPago', 'proximoPago'] as const
+export const COLUMNS = ['nombre', 'apellido', 'empresa', 'producto', 'dominio', 'dominioVencimiento', 'mail', 'telefono', 'servidor', 'baseDatos', 'plan', 'metodoPago', 'ultimoPago', 'proximoPago'] as const
 
 export type ClientColumn = (typeof COLUMNS)[number]
 export type ClientInput = Record<ClientColumn, string>
@@ -8,6 +8,7 @@ export const COLUMN_LABELS: Record<ClientColumn, string> = {
   nombre: 'Nombre',
   apellido: 'Apellido',
   empresa: 'Empresa',
+  producto: 'Producto',
   dominio: 'Dominio',
   dominioVencimiento: 'Vencimiento del dominio',
   mail: 'Mail',
