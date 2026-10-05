@@ -95,6 +95,7 @@ export function ClientsDashboard() {
 
   const plans = useMemo(() => [...new Set(clients.map((client) => client.plan).filter(Boolean))], [clients])
   const servers = useMemo(() => [...new Set(clients.map((client) => client.servidor).filter(Boolean))], [clients])
+  const activeProducts = useMemo(() => clients.filter((client) => client.producto.trim() && client.producto.trim() !== '-').length, [clients])
   const monthlyRevenue = useMemo(() => clients.reduce((total, client) => {
     const monthlyAmount = Number.parseInt(client.plan.replace(/[^0-9]/g, ''), 10) || 0
     return total + monthlyAmount
@@ -108,15 +109,6 @@ export function ClientsDashboard() {
         date: new Date(`${client.dominioVencimiento}T12:00:00`),
       }))
       .filter(({ date }) => date >= today)
-      .sort((a, b) => a.date.getTime() - b.date.getTime())[0] ?? null
-  }, [clients])
-  const nextPayment = useMemo(() => {
-    const today = new Date()
-    today.setHours(0, 0, 0, 0)
-    return clients
-      .filter((client) => client.proximoPago)
-      .map((client) => ({ client, date: new Date(`${client.proximoPago}T12:00:00`) }))
-      .filter(({ date }) => !Number.isNaN(date.getTime()) && date >= today)
       .sort((a, b) => a.date.getTime() - b.date.getTime())[0] ?? null
   }, [clients])
   const filtered = useMemo(
@@ -270,18 +262,7 @@ export function ClientsDashboard() {
                 }
                 icon={<CalendarClock />}
               />
-              <Stat
-                label="Próximo cobro"
-                value={
-                  <>
-                    <span className="block truncate">{nextPayment?.client.empresa || 'Sin cobros'}</span>
-                    <span className="mt-1 block text-sm font-medium text-brand-foreground/50">
-                      {nextPayment ? nextPayment.date.toLocaleDateString('es-AR') : 'Sin fecha registrada'}
-                    </span>
-                  </>
-                }
-                icon={<CircleDollarSign />}
-              />
+              <Stat label="Productos activos" value={activeProducts} icon={<CircleDollarSign />} />
             </section>
             {error && <p role="alert" className="mb-4 text-sm text-red-300">{error}</p>}
             <section className="overflow-hidden rounded-xl border border-brand-foreground/15 bg-brand-foreground/10">
@@ -531,7 +512,9 @@ function ClientRow({ client, canMoveUp, canMoveDown, onMoveUp, onMoveDown, onOpe
       <div className="col-span-2 min-w-0 md:col-span-1">
         <div className="text-xs text-brand-foreground/50">{clientLabel(client.nombre)}</div>
         <div className="font-bold">{client.nombre} {client.apellido}</div>
-        <div className="mt-1 truncate text-xs text-brand-foreground/55">{client.telefono || 'Sin teléfono'}</div>
+        {client.telefono ? (
+          <a href={`https://wa.me/${client.telefono.replace(/\D/g, '')}?text=${encodeURIComponent('Hola')}`} target="_blank" rel="noreferrer" onClick={(event) => event.stopPropagation()} className="mt-1 block truncate text-xs text-brand-foreground/55 underline-offset-2 hover:text-orange hover:underline">{client.telefono}</a>
+        ) : <div className="mt-1 truncate text-xs text-brand-foreground/55">Sin teléfono</div>}
       </div>
       <div className="min-w-0">
         <div className="text-xs text-brand-foreground/50">Empresa</div>
