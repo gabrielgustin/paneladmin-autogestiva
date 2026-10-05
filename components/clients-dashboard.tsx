@@ -31,6 +31,36 @@ function toInput(client: SheetClient): ClientInput {
   return input
 }
 
+type ClientEntry = { key: string; members: SheetClient[] }
+
+function normalizeText(value: string) {
+  return value.trim().toLocaleLowerCase('es').normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/\s+/g, ' ')
+}
+
+function buildEntries(list: SheetClient[]): ClientEntry[] {
+  const entries = new Map<string, ClientEntry>()
+  for (const client of list) {
+    const company = normalizeText(client.empresa)
+    const key = company ? `empresa:${company}` : `fila:${client.row}`
+    const entry = entries.get(key)
+    if (entry) entry.members.push(client)
+    else entries.set(key, { key, members: [client] })
+  }
+  return [...entries.values()]
+}
+
+function planAmount(plan: string) {
+  return Number.parseInt(plan.replace(/[^0-9]/g, ''), 10) || 0
+}
+
+function uniqueValues(values: string[]) {
+  return [...new Set(values.map((value) => value.trim()).filter(Boolean))]
+}
+
+function formatDate(iso: string) {
+  return iso ? iso.split('-').reverse().join('/') : '—'
+}
+
 export function ClientsDashboard() {
   const router = useRouter()
   const [clients, setClients] = useState<SheetClient[]>([])
@@ -44,6 +74,7 @@ export function ClientsDashboard() {
   const [form, setForm] = useState<ClientInput>(emptyForm)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
+  const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set())
 
   const load = useCallback(async () => {
     setLoading(true)
@@ -90,6 +121,18 @@ export function ClientsDashboard() {
       }),
     [clients, plan, query, servidor],
   )
+  const visibleEntries = useMemo(() => buildEntries(filtered), [filtered])
+  const totalEntries = useMemo(() => buildEntries(clients).length, [clients])
+  const isSearching = query.trim() !== ''
+
+  function toggleGroup(key: string) {
+    setExpandedGroups((current) => {
+      const next = new Set(current)
+      if (next.has(key)) next.delete(key)
+      else next.add(key)
+      return next
+    })
+  }
 
   function openNew() {
     setEditing(null)
@@ -134,12 +177,7 @@ export function ClientsDashboard() {
     }
   }
 
-  async function moveClient(client: SheetClient, direction: -1 | 1) {
-    const index = clients.findIndex((item) => item.row === client.row)
-    const nextIndex = index + direction
-    if (index < 0 || nextIndex < 0 || nextIndex >= clients.length) return
-    const reordered = [...clients]
-    ;[reordered[index], reordered[nextIndex]] = [reordered[nextIndex], reordered[index]]
+  async function persistOrder(reordered: SheetClient[]) {
     setClients(reordered)
     const response = await fetch('/api/clients', {
       method: 'PATCH',
@@ -150,6 +188,29 @@ export function ClientsDashboard() {
       setError((await response.json()).error ?? 'No se pudo guardar el orden')
       await load()
     }
+  }
+
+  async function moveEntry(key: string, direction: -1 | 1) {
+    const visibleIndex = visibleEntries.findIndex((entry) => entry.key === key)
+    const target = visibleEntries[visibleIndex + direction]
+    if (visibleIndex < 0 || !target) return
+    const entries = buildEntries(clients)
+    const from = entries.findIndex((entry) => entry.key === key)
+    const to = entries.findIndex((entry) => entry.key === target.key)
+    if (from < 0 || to < 0) return
+    ;[entries[from], entries[to]] = [entries[to], entries[from]]
+    await persistOrder(entries.flatMap((entry) => entry.members))
+  }
+
+  async function moveWithinGroup(entry: ClientEntry, client: SheetClient, direction: -1 | 1) {
+    const sibling = entry.members[entry.members.findIndex((member) => member.row === client.row) + direction]
+    if (!sibling) return
+    const reordered = [...clients]
+    const from = reordered.findIndex((item) => item.row === client.row)
+    const to = reordered.findIndex((item) => item.row === sibling.row)
+    if (from < 0 || to < 0) return
+    ;[reordered[from], reordered[to]] = [reordered[to], reordered[from]]
+    await persistOrder(reordered)
   }
 
   async function remove(client: SheetClient) {
@@ -189,7 +250,7 @@ export function ClientsDashboard() {
       <div className="mx-auto max-w-7xl px-3 py-5 sm:px-4 sm:py-8 md:px-10">
         <>
             <section className="mb-6 grid gap-4 sm:grid-cols-3">
-              <Stat label="Clientes totales" value={clients.length} icon={<UserRound />} />
+              <Stat label="Clientes totales" value={totalEntries} icon={<UserRound />} />
               <Stat label="Recaudación mensual estimada" value={`$${Math.round(monthlyRevenue).toLocaleString('es-AR')}`} icon={<CircleDollarSign />} />
               <Stat
                 label="Próximo dominio a vencer"
@@ -236,9 +297,20 @@ export function ClientsDashboard() {
                 ) : filtered.length === 0 ? (
                   <div className="p-12 text-center text-sm text-brand-foreground/60">No hay clientes para mostrar. Creá uno con “Nuevo cliente”.</div>
                 ) : (
-                  filtered.map((client) => {
-                    const index = clients.findIndex((item) => item.row === client.row)
-                    return <ClientRow key={client.row} client={client} canMoveUp={index > 0} canMoveDown={index < clients.length - 1} onMoveUp={() => moveClient(client, -1)} onMoveDown={() => moveClient(client, 1)} onOpen={() => setSelectedClient(client)} onEdit={() => openEdit(client)} onDelete={() => remove(client)} />
+                  visibleEntries.map((entry, entryIndex) => {
+                    const canMoveUp = entryIndex > 0
+                    const canMoveDown = entryIndex < visibleEntries.length - 1
+                    if (entry.members.length === 1) {
+                      const client = entry.members[0]
+                      return <ClientRow key={entry.key} client={client} canMoveUp={canMoveUp} canMoveDown={canMoveDown} onMoveUp={() => moveEntry(entry.key, -1)} onMoveDown={() => moveEntry(entry.key, 1)} onOpen={() => setSelectedClient(client)} onEdit={() => openEdit(client)} onDelete={() => remove(client)} />
+                    }
+                    return (
+                      <GroupRow key={entry.key} entry={entry} expanded={isSearching || expandedGroups.has(entry.key)} canMoveUp={canMoveUp} canMoveDown={canMoveDown} onToggle={() => toggleGroup(entry.key)} onMoveUp={() => moveEntry(entry.key, -1)} onMoveDown={() => moveEntry(entry.key, 1)}>
+                        {entry.members.map((client, memberIndex) => (
+                          <ClientRow key={client.row} client={client} canMoveUp={memberIndex > 0} canMoveDown={memberIndex < entry.members.length - 1} onMoveUp={() => moveWithinGroup(entry, client, -1)} onMoveDown={() => moveWithinGroup(entry, client, 1)} onOpen={() => setSelectedClient(client)} onEdit={() => openEdit(client)} onDelete={() => remove(client)} />
+                        ))}
+                      </GroupRow>
+                    )
                   })
                 )}
               </div>
@@ -369,8 +441,84 @@ function ClientDetails({ client, onClose }: { client: SheetClient; onClose: () =
 const feminineNames = new Set(['ana', 'beatriz', 'camila', 'carla', 'carmen', 'clara', 'daniela', 'elena', 'emilia', 'florencia', 'gabriela', 'ines', 'isabel', 'josefina', 'julieta', 'laura', 'lucia', 'luisa', 'marcela', 'maria', 'mariana', 'martina', 'maria', 'monica', 'natalia', 'noelia', 'patricia', 'paula', 'romina', 'rosa', 'sofia', 'valentina', 'veronica'])
 
 function clientLabel(nombre: string) {
-  const normalizedName = nombre.trim().toLocaleLowerCase('es').normalize('NFD').replace(/[\\u0300-\\u036f]/g, '')
-  return feminineNames.has(normalizedName) ? 'Clienta' : 'Cliente'
+  return feminineNames.has(normalizeText(nombre)) ? 'Clienta' : 'Cliente'
+}
+
+const rowGridClass = 'grid grid-cols-2 items-start gap-x-4 gap-y-3 p-4 sm:gap-4 sm:p-5 md:grid-cols-[minmax(0,1.35fr)_minmax(0,1fr)_minmax(0,1fr)_minmax(0,1.2fr)_minmax(0,1fr)_minmax(0,1fr)_minmax(0,1fr)_minmax(0,1.3fr)_auto]'
+
+function summarize(values: string[], plural: string) {
+  if (values.length === 0) return '—'
+  return values.length === 1 ? values[0] : `${values.length} ${plural}`
+}
+
+function GroupRow({ entry, expanded, canMoveUp, canMoveDown, onToggle, onMoveUp, onMoveDown, children }: { entry: ClientEntry; expanded: boolean; canMoveUp: boolean; canMoveDown: boolean; onToggle: () => void; onMoveUp: () => void; onMoveDown: () => void; children: React.ReactNode }) {
+  const { members } = entry
+  const names = uniqueValues(members.map((member) => `${member.nombre} ${member.apellido}`))
+  const products = uniqueValues(members.map((member) => member.producto))
+  const domains = uniqueValues(members.map((member) => member.dominio))
+  const servers = uniqueValues(members.map((member) => member.servidor))
+  const databases = uniqueValues(members.map((member) => member.baseDatos))
+  const totalPlan = members.reduce((total, member) => total + planAmount(member.plan), 0)
+  const nextDomainExpiry = members.map((member) => member.dominioVencimiento).filter(Boolean).sort()[0] ?? ''
+  const nextPayment = members.map((member) => member.proximoPago).filter(Boolean).sort()[0] ?? ''
+
+  return (
+    <div>
+      <div
+        role="button"
+        tabIndex={0}
+        aria-expanded={expanded}
+        onClick={onToggle}
+        onKeyDown={(event) => { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); onToggle() } }}
+        className={`${rowGridClass} cursor-pointer border-l-2 ${expanded ? 'border-orange/50' : 'border-transparent'} transition-colors hover:bg-brand-foreground/5 focus:outline-none focus:ring-2 focus:ring-orange/60 md:items-start`}
+      >
+        <div className="col-span-2 min-w-0 md:col-span-1">
+          <div className="text-xs text-brand-foreground/50">{names.length > 1 ? 'Clientes' : clientLabel(members[0].nombre)}</div>
+          <div className="truncate font-bold" title={names.join(', ')}>{names.join(', ') || '—'}</div>
+        </div>
+        <div className="min-w-0">
+          <div className="text-xs text-brand-foreground/50">Empresa</div>
+          <div className="truncate text-sm font-semibold">{members[0].empresa}</div>
+          <div className="mt-1 text-[11px] text-orange">{members.length} servicios</div>
+        </div>
+        <div className="min-w-0">
+          <div className="text-xs text-brand-foreground/50">Producto</div>
+          <div className="truncate text-sm" title={products.join(', ')}>{products.length ? products.join(', ') : '—'}</div>
+        </div>
+        <div className="min-w-0">
+          <div className="text-xs text-brand-foreground/50">Dominio</div>
+          <div className="truncate text-sm" title={domains.join(', ')}>{summarize(domains, 'dominios')}</div>
+          <div className="mt-1 text-[11px] text-brand-foreground/45">Vence: {formatDate(nextDomainExpiry)}</div>
+        </div>
+        <div className="min-w-0">
+          <div className="text-xs text-brand-foreground/50">Servidor</div>
+          <div className="truncate text-sm" title={servers.join(', ')}>{servers.length ? servers.join(', ') : '—'}</div>
+        </div>
+        <div className="min-w-0">
+          <div className="text-xs text-brand-foreground/50">Base de datos</div>
+          <div className="truncate text-sm" title={databases.join(', ')}>{databases.length ? databases.join(', ') : '—'}</div>
+        </div>
+        <div className="min-w-0">
+          <div className="text-xs text-brand-foreground/50">Plan (total)</div>
+          <div className="font-semibold text-orange">{totalPlan ? `$${totalPlan.toLocaleString('es-AR')}` : '—'}</div>
+        </div>
+        <div className="min-w-0">
+          <div className="text-xs text-brand-foreground/50">Próximo pago</div>
+          <div className="truncate text-sm">{formatDate(nextPayment)}</div>
+        </div>
+        <div className="col-span-2 flex items-center gap-1 md:col-span-1 md:justify-end" onClick={(event) => event.stopPropagation()}>
+          <div className="mr-1 flex flex-col">
+            <button type="button" aria-label={`Mover ${members[0].empresa} hacia arriba`} disabled={!canMoveUp} onClick={onMoveUp} className="rounded p-1 text-brand-foreground/50 hover:bg-brand-foreground/10 disabled:opacity-20"><ChevronUp className="size-3.5" /></button>
+            <button type="button" aria-label={`Mover ${members[0].empresa} hacia abajo`} disabled={!canMoveDown} onClick={onMoveDown} className="rounded p-1 text-brand-foreground/50 hover:bg-brand-foreground/10 disabled:opacity-20"><ChevronDown className="size-3.5" /></button>
+          </div>
+          <button type="button" onClick={onToggle} aria-label={expanded ? `Contraer ${members[0].empresa}` : `Expandir ${members[0].empresa}`} className="rounded-lg border border-brand-foreground/15 p-2 text-brand-foreground/70 hover:bg-brand-foreground/10">
+            <ChevronDown className={`size-4 transition-transform ${expanded ? 'rotate-180' : ''}`} />
+          </button>
+        </div>
+      </div>
+      {expanded && <div className="divide-y divide-brand-foreground/10 border-l-2 border-t border-orange/50 border-t-brand-foreground/10 bg-brand/40">{children}</div>}
+    </div>
+  )
 }
 
 function ClientRow({ client, canMoveUp, canMoveDown, onMoveUp, onMoveDown, onOpen, onEdit, onDelete }: { client: SheetClient; canMoveUp: boolean; canMoveDown: boolean; onMoveUp: () => void; onMoveDown: () => void; onOpen: () => void; onEdit: () => void; onDelete: () => void }) {
@@ -411,6 +559,10 @@ function ClientRow({ client, canMoveUp, canMoveDown, onMoveUp, onMoveDown, onOpe
       <div className="min-w-0">
         <div className="text-xs text-brand-foreground/50">Plan</div>
         <div className="font-semibold text-orange">{client.plan || '—'}</div>
+      </div>
+      <div className="min-w-0">
+        <div className="text-xs text-brand-foreground/50">Próximo pago</div>
+        <div className="truncate text-sm">{formatDate(client.proximoPago)}</div>
       </div>
       <div className="col-span-2 flex items-center gap-1 md:col-span-1 md:justify-end" onClick={(event) => event.stopPropagation()}>
         <div className="mr-1 flex flex-col">
