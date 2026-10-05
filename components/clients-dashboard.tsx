@@ -533,9 +533,9 @@ function ClientRow({ client, canMoveUp, canMoveDown, onMoveUp, onMoveDown, onOpe
         <div className="text-xs text-brand-foreground/50">Servidor</div>
         <div className={`truncate text-sm ${client.servidor === '-' ? 'text-center' : ''}`}>{client.servidor || '—'}</div>
       </div>
-      <div className="min-w-0">
+      <div className="min-w-0 text-center">
         <div className="text-xs text-brand-foreground/50">Base de datos</div>
-        <div className={`truncate text-sm ${client.baseDatos === '-' ? 'text-center' : ''}`}>{client.baseDatos || '—'}</div>
+        <div className="truncate text-sm">{client.baseDatos || '—'}</div>
       </div>
       <div className="min-w-0">
         <div className="text-xs text-brand-foreground/50">Plan</div>
