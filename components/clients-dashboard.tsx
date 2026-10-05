@@ -201,7 +201,7 @@ export function ClientsDashboard() {
                   Nuevo cliente
                 </button>
               </div>
-              <div className="hidden border-b border-brand-foreground/10 px-5 py-3 text-xs font-semibold text-brand-foreground/50 md:grid md:grid-cols-[1.35fr_1fr_1.2fr_1fr_1fr_1fr_1.1fr_1.3fr_auto] md:items-center md:gap-4">
+              <div className="hidden border-b border-brand-foreground/10 px-5 py-3 text-xs font-semibold text-brand-foreground/50 md:grid md:grid-cols-[minmax(0,1.35fr)_minmax(0,1fr)_minmax(0,1.2fr)_minmax(0,1fr)_minmax(0,1fr)_minmax(0,1fr)_minmax(0,1.1fr)_minmax(0,1.3fr)_auto] md:items-center md:gap-4">
                 <div>Cliente</div>
                 <div>Empresa</div>
                 <div>Dominio</div>
@@ -358,35 +358,35 @@ function ClientRow({ client, onOpen, onEdit, onDelete }: { client: SheetClient; 
       tabIndex={0}
       onClick={onOpen}
       onKeyDown={(event) => { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); onOpen() } }}
-      className="grid cursor-pointer grid-cols-2 items-start gap-x-4 gap-y-3 p-4 transition-colors hover:bg-brand-foreground/5 focus:outline-none focus:ring-2 focus:ring-orange/60 sm:gap-4 sm:p-5 md:grid-cols-[1.35fr_1fr_1.2fr_1fr_1fr_1fr_1.1fr_1.3fr_auto] md:items-start"
+      className="grid cursor-pointer grid-cols-2 items-start gap-x-4 gap-y-3 p-4 transition-colors hover:bg-brand-foreground/5 focus:outline-none focus:ring-2 focus:ring-orange/60 sm:gap-4 sm:p-5 md:grid-cols-[minmax(0,1.35fr)_minmax(0,1fr)_minmax(0,1.2fr)_minmax(0,1fr)_minmax(0,1fr)_minmax(0,1fr)_minmax(0,1.1fr)_minmax(0,1.3fr)_auto] md:items-start"
     >
       <div className="col-span-2 min-w-0 md:col-span-1">
         <div className="text-xs text-brand-foreground/50">{clientLabel(client.nombre)}</div>
         <div className="font-bold">{client.nombre} {client.apellido}</div>
         <div className="mt-1 truncate text-xs text-brand-foreground/55">{client.mail || 'Sin mail'} · {client.telefono || 'Sin teléfono'}</div>
       </div>
-      <div>
+      <div className="min-w-0">
         <div className="text-xs text-brand-foreground/50">Empresa</div>
         <div className="truncate text-sm">{client.empresa || '—'}</div>
       </div>
-      <div>
+      <div className="min-w-0">
         <div className="text-xs text-brand-foreground/50">Dominio</div>
         <div className="truncate text-sm">{client.dominio || '—'}</div>
         <div className="mt-1 text-[11px] text-brand-foreground/45">Vence: {client.dominioVencimiento || '—'}</div>
       </div>
-      <div>
+      <div className="min-w-0">
         <div className="text-xs text-brand-foreground/50">Servidor</div>
         <div className="truncate text-sm">{client.servidor || '—'}</div>
       </div>
-      <div>
+      <div className="min-w-0">
         <div className="text-xs text-brand-foreground/50">Base de datos</div>
         <div className="truncate text-sm">{client.baseDatos || '—'}</div>
       </div>
-      <div>
+      <div className="min-w-0">
         <div className="text-xs text-brand-foreground/50">Plan</div>
         <div className="font-semibold text-orange">{client.plan || '—'}</div>
       </div>
-      <div>
+      <div className="min-w-0">
         <div className="text-xs text-brand-foreground/50">Método de pago</div>
         <div className="truncate text-sm font-semibold">{client.metodoPago || '—'}</div>
         <div className="mt-1 text-[11px] text-brand-foreground/45">Próximo: {client.proximoPago || '—'}</div>
