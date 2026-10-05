@@ -87,7 +87,7 @@ export default function Page() {
           <button onClick={() => load()} aria-label={loading ? 'Sincronizando' : 'Actualizar datos'} className="inline-flex h-9 min-w-0 flex-1 items-center justify-center gap-1.5 rounded-full bg-orange px-2 text-[11px] font-semibold sm:h-10 sm:flex-none sm:gap-2 sm:px-5 sm:text-sm text-orange-foreground transition-all duration-300 hover:-translate-y-0.5 disabled:opacity-50" disabled={loading}><RefreshCw className={`size-4 ${loading ? 'animate-spin' : ''}`} /><span>{loading ? 'Sincronizando' : 'Actualizar'}</span></button>
           <LogoutButton className="h-9 px-2 text-[11px] sm:h-10 sm:px-4 sm:text-sm" />
         </div>
-        <div className="max-w-3xl"><div className="mb-5 flex flex-wrap items-center gap-3"><span className="rounded-full border border-brand-foreground/20 bg-brand-foreground/10 px-3 py-1.5 text-xs font-semibold text-brand-foreground">Infraestructura</span><Link href="/clientes" className="rounded-full border border-orange/40 bg-orange/10 px-3 py-1.5 text-xs font-bold text-orange hover:bg-orange/20">Clientes</Link></div></div>
+        <div className="max-w-3xl"><div className="mb-5 flex flex-wrap items-center gap-3"><span className="rounded-full border border-brand-foreground/20 bg-brand-foreground/10 px-3 py-1.5 text-xs font-semibold text-brand-foreground">Infraestructura</span><Link href="/clientes" className="rounded-full border border-brand-foreground/20 bg-brand-foreground/10 px-3 py-1.5 text-xs font-semibold text-brand-foreground hover:bg-brand-foreground/15">Clientes</Link></div></div>
       </div>
     </div>
     <div className="mx-auto max-w-7xl px-3 py-4 text-brand-foreground sm:px-4 sm:py-6 md:px-6 md:py-8">
