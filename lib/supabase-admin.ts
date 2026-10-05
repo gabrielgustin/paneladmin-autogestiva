@@ -21,10 +21,11 @@ export type SupabaseClientRow = {
   metodo_pago: string | null
   ultimo_pago: string | null
   proximo_pago: string | null
+  orden: number | null
 }
 
 export function toClient(row: SupabaseClientRow) {
-  return { row: row.id, nombre: row.nombre, apellido: row.apellido, empresa: row.empresa ?? '', dominio: row.dominio ?? '', dominioVencimiento: row.dominio_vencimiento ?? '', mail: row.mail ?? '', telefono: row.telefono ?? '', servidor: row.servidor ?? '', baseDatos: row.base_datos ?? '', plan: row.plan ?? '', metodoPago: row.metodo_pago ?? '', ultimoPago: row.ultimo_pago ?? '', proximoPago: row.proximo_pago ?? '' }
+  return { row: row.id, nombre: row.nombre, apellido: row.apellido, empresa: row.empresa ?? '', dominio: row.dominio ?? '', dominioVencimiento: row.dominio_vencimiento ?? '', mail: row.mail ?? '', telefono: row.telefono ?? '', servidor: row.servidor ?? '', baseDatos: row.base_datos ?? '', plan: row.plan ?? '', metodoPago: row.metodo_pago ?? '', ultimoPago: row.ultimo_pago ?? '', proximoPago: row.proximo_pago ?? '', orden: row.orden ?? 0 }
 }
 
 export function toRow(input: Record<string, string>) {

@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { LogoutButton } from '@/components/session-guard'
-import { ArrowLeft, CalendarClock, ChevronDown, CircleDollarSign, Database, Pencil, Plus, RefreshCw, Search, Server, Trash2, UserRound, X } from 'lucide-react'
+import { ArrowLeft, CalendarClock, ChevronDown, ChevronUp, CircleDollarSign, Database, Pencil, Plus, RefreshCw, Search, Server, Trash2, UserRound, X } from 'lucide-react'
 import Link from 'next/link'
 import { COLUMN_LABELS, fingerprint, type ClientInput, type SheetClient } from '@/lib/clients-shared'
 
@@ -134,6 +134,24 @@ export function ClientsDashboard() {
     }
   }
 
+  async function moveClient(client: SheetClient, direction: -1 | 1) {
+    const index = clients.findIndex((item) => item.row === client.row)
+    const nextIndex = index + direction
+    if (index < 0 || nextIndex < 0 || nextIndex >= clients.length) return
+    const reordered = [...clients]
+    ;[reordered[index], reordered[nextIndex]] = [reordered[nextIndex], reordered[index]]
+    setClients(reordered)
+    const response = await fetch('/api/clients', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ ids: reordered.map((item) => item.row) }),
+    })
+    if (!response.ok) {
+      setError((await response.json()).error ?? 'No se pudo guardar el orden')
+      await load()
+    }
+  }
+
   async function remove(client: SheetClient) {
     if (!window.confirm(`¿Eliminar a ${client.nombre} ${client.apellido}?`)) return
     const response = await fetch('/api/clients', {
@@ -218,7 +236,10 @@ export function ClientsDashboard() {
                 ) : filtered.length === 0 ? (
                   <div className="p-12 text-center text-sm text-brand-foreground/60">No hay clientes para mostrar. Creá uno con “Nuevo cliente”.</div>
                 ) : (
-                  filtered.map((client) => <ClientRow key={client.row} client={client} onOpen={() => setSelectedClient(client)} onEdit={() => openEdit(client)} onDelete={() => remove(client)} />)
+                  filtered.map((client) => {
+                    const index = clients.findIndex((item) => item.row === client.row)
+                    return <ClientRow key={client.row} client={client} canMoveUp={index > 0} canMoveDown={index < clients.length - 1} onMoveUp={() => moveClient(client, -1)} onMoveDown={() => moveClient(client, 1)} onOpen={() => setSelectedClient(client)} onEdit={() => openEdit(client)} onDelete={() => remove(client)} />
+                  })
                 )}
               </div>
             </section>
@@ -310,7 +331,7 @@ function ClientDetails({ client, onClose }: { client: SheetClient; onClose: () =
     ['Dominio', client.dominio],
     ['Vencimiento del dominio', client.dominioVencimiento],
     ['Mail', client.mail],
-    ['Teléfono', client.telefono],
+    ['Tel��fono', client.telefono],
     ['Servidor', client.servidor],
     ['Base de datos', client.baseDatos],
     ['Plan', client.plan],
@@ -351,7 +372,7 @@ function clientLabel(nombre: string) {
   return feminineNames.has(normalizedName) ? 'Clienta' : 'Cliente'
 }
 
-function ClientRow({ client, onOpen, onEdit, onDelete }: { client: SheetClient; onOpen: () => void; onEdit: () => void; onDelete: () => void }) {
+function ClientRow({ client, canMoveUp, canMoveDown, onMoveUp, onMoveDown, onOpen, onEdit, onDelete }: { client: SheetClient; canMoveUp: boolean; canMoveDown: boolean; onMoveUp: () => void; onMoveDown: () => void; onOpen: () => void; onEdit: () => void; onDelete: () => void }) {
   return (
     <div
       role="button"
@@ -391,7 +412,11 @@ function ClientRow({ client, onOpen, onEdit, onDelete }: { client: SheetClient; 
         <div className="truncate text-sm font-semibold">{client.metodoPago || '—'}</div>
         <div className="mt-1 text-[11px] text-brand-foreground/45">Próximo: {client.proximoPago || '—'}</div>
       </div>
-      <div className="col-span-2 flex gap-2 md:col-span-1 md:justify-end" onClick={(event) => event.stopPropagation()}>
+      <div className="col-span-2 flex items-center gap-1 md:col-span-1 md:justify-end" onClick={(event) => event.stopPropagation()}>
+        <div className="mr-1 flex flex-col">
+          <button type="button" aria-label="Mover cliente hacia arriba" disabled={!canMoveUp} onClick={onMoveUp} className="rounded p-1 text-brand-foreground/50 hover:bg-brand-foreground/10 disabled:opacity-20"><ChevronUp className="size-3.5" /></button>
+          <button type="button" aria-label="Mover cliente hacia abajo" disabled={!canMoveDown} onClick={onMoveDown} className="rounded p-1 text-brand-foreground/50 hover:bg-brand-foreground/10 disabled:opacity-20"><ChevronDown className="size-3.5" /></button>
+        </div>
         <button onClick={onEdit} className="rounded-lg border border-brand-foreground/15 p-2 text-brand-foreground/70 hover:bg-brand-foreground/10" aria-label={`Editar ${client.nombre}`}>
           <Pencil className="size-4" />
         </button>
