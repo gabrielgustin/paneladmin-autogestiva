@@ -201,6 +201,17 @@ export function ClientsDashboard() {
                   Nuevo cliente
                 </button>
               </div>
+              <div className="hidden border-b border-brand-foreground/10 px-5 py-3 text-xs font-semibold text-brand-foreground/50 md:grid md:grid-cols-[1.35fr_1fr_1.2fr_1fr_1fr_1fr_1.1fr_1.3fr_auto] md:items-center md:gap-4">
+                <div>Cliente</div>
+                <div>Empresa</div>
+                <div>Dominio</div>
+                <div>Servidor</div>
+                <div>Base de datos</div>
+                <div>Plan</div>
+                <div>Método de pago</div>
+                <div>Próximo pago</div>
+                <div />
+              </div>
               <div className="divide-y divide-brand-foreground/10">
                 {loading && clients.length === 0 ? (
                   <div className="p-12 text-center text-sm text-brand-foreground/60">Cargando clientes…</div>
