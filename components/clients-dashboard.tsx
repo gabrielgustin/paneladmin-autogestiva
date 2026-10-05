@@ -240,9 +240,9 @@ export function ClientsDashboard() {
             </Link>
           </div>
           <div className="flex w-full flex-wrap items-center gap-2 sm:w-auto">
-            <button onClick={load} aria-label={loading ? 'Sincronizando' : 'Actualizar datos'} disabled={loading} className={`${hasScrolled ? 'fixed right-3 top-3 z-50' : ''} inline-flex h-10 items-center justify-center gap-2 rounded-full bg-orange px-5 text-sm font-semibold text-orange-foreground transition-all duration-300 hover:-translate-y-0.5 disabled:opacity-50`}>
+            <button onClick={load} aria-label={loading ? 'Sincronizando' : 'Actualizar datos'} disabled={loading} className={`${hasScrolled ? 'fixed right-3 top-3 z-50 px-3' : 'px-5'} inline-flex h-10 items-center justify-center gap-2 rounded-full bg-orange text-sm font-semibold text-orange-foreground transition-all duration-300 hover:-translate-y-0.5 disabled:opacity-50`}>
               <RefreshCw className={`size-4 ${loading ? 'animate-spin' : ''}`} />
-              Actualizar
+              <span className={hasScrolled ? 'sr-only' : ''}>Actualizar</span>
             </button>
             <LogoutButton />
           </div>
