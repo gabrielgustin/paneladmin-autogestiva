@@ -440,7 +440,7 @@ function clientLabel(nombre: string) {
   return feminineNames.has(normalizeText(nombre)) ? 'Clienta' : 'Cliente'
 }
 
-const rowGridClass = 'grid grid-cols-2 items-start gap-x-4 gap-y-3 p-4 sm:gap-4 sm:p-5 md:grid-cols-[minmax(0,1.35fr)_minmax(0,1fr)_minmax(0,1fr)_minmax(0,1.2fr)_minmax(0,1fr)_minmax(0,1fr)_minmax(0,1.3fr)_auto]'
+const rowGridClass = 'grid grid-cols-2 items-start gap-x-4 gap-y-3 p-4 sm:gap-4 sm:p-5 md:grid-cols-[minmax(0,1.35fr)_minmax(0,1fr)_minmax(0,1fr)_minmax(0,1.2fr)_minmax(0,1fr)_minmax(0,1fr)_minmax(0,1.3fr)_auto] [&>*]:self-start'
 
 function summarize(values: string[], plural: string) {
   if (values.length === 0) return '—'
