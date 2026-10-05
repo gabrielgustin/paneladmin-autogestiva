@@ -284,7 +284,7 @@ export function ClientsDashboard() {
                 <div>Dominio</div>
                 <div>Servidor</div>
                 <div>Base de datos</div>
-                <div>Plan</div>
+                <div className="leading-4">Plan</div>
                 <div />
               </div>
               <div className="divide-y divide-brand-foreground/10">
@@ -479,9 +479,9 @@ function GroupRow({ entry, expanded, canMoveUp, canMoveDown, onToggle, onMoveUp,
         <div className="min-w-0" aria-hidden="true" />
         <div className="min-w-0" aria-hidden="true" />
         <div className="min-w-0" aria-hidden="true" />
-        <div className="min-w-0">
-          <div className="text-xs text-brand-foreground/50">Plan (total)</div>
-          <div className="font-semibold text-orange">{totalPlan ? `$${totalPlan.toLocaleString('es-AR')}` : '—'}</div>
+        <div className="min-w-0 self-start">
+          <div className="min-h-4 text-xs leading-4 text-brand-foreground/50">Plan (total)</div>
+          <div className="font-semibold leading-6 text-orange">{totalPlan ? `$${totalPlan.toLocaleString('es-AR')}` : '—'}</div>
         </div>
         <div className="col-span-2 flex items-center gap-1 md:col-span-1 md:justify-end" onClick={(event) => event.stopPropagation()}>
           <div className="mr-1 flex flex-col">
@@ -514,24 +514,24 @@ function ClientRow({ client, canMoveUp, canMoveDown, onMoveUp, onMoveDown, onOpe
       </div>
       <div className="min-w-0">
         <div className="text-xs text-brand-foreground/50">Empresa</div>
-        <div className="truncate text-sm">{client.empresa || '—'}</div>
+        <div className={`truncate text-sm ${client.empresa === '-' ? 'text-center' : ''}`}>{client.empresa || '—'}</div>
       </div>
       <div className="min-w-0">
         <div className="text-xs text-brand-foreground/50">Producto</div>
-        <div className="truncate text-sm">{client.producto || '—'}</div>
+        <div className={`truncate text-sm ${client.producto === '-' ? 'text-center' : ''}`}>{client.producto || '—'}</div>
       </div>
       <div className="min-w-0">
         <div className="text-xs text-brand-foreground/50">Dominio</div>
-        <div className="truncate text-sm">{client.dominio || '—'}</div>
+        <div className={`truncate text-sm ${client.dominio === '-' ? 'text-center' : ''}`}>{client.dominio || '—'}</div>
         <div className="mt-1 text-[11px] text-brand-foreground/45">Vence: {client.dominioVencimiento || '—'}</div>
       </div>
       <div className="min-w-0">
         <div className="text-xs text-brand-foreground/50">Servidor</div>
-        <div className="truncate text-sm">{client.servidor || '—'}</div>
+        <div className={`truncate text-sm ${client.servidor === '-' ? 'text-center' : ''}`}>{client.servidor || '—'}</div>
       </div>
       <div className="min-w-0">
         <div className="text-xs text-brand-foreground/50">Base de datos</div>
-        <div className="truncate text-sm">{client.baseDatos || '—'}</div>
+        <div className={`truncate text-sm ${client.baseDatos === '-' ? 'text-center' : ''}`}>{client.baseDatos || '—'}</div>
       </div>
       <div className="min-w-0">
         <div className="text-xs text-brand-foreground/50">Plan</div>
