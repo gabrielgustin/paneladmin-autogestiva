@@ -229,14 +229,14 @@ export function ClientsDashboard() {
     >
       <header className="border-b border-brand-foreground/10 bg-brand/85">
         <div className="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-3 px-4 py-4 sm:px-6 sm:py-5 md:px-10">
-          <div>
-            <Link href="/" className="mb-4 inline-flex items-center gap-2 text-xs font-semibold text-brand-foreground/60 hover:text-orange">
+<div className="flex items-center">
+  <Link href="/" className="inline-flex items-center gap-2 text-xs font-semibold text-brand-foreground/60 hover:text-orange">
               <ArrowLeft className="size-4" />
               Panel de infraestructura
             </Link>
           </div>
           <div className="flex w-full flex-wrap items-center gap-2 sm:w-auto">
-            <button onClick={load} className="inline-flex h-11 items-center gap-2 rounded-full border border-brand-foreground/20 px-4 text-sm font-bold hover:bg-brand-foreground/10">
+            <button onClick={load} aria-label={loading ? 'Sincronizando' : 'Actualizar datos'} disabled={loading} className="inline-flex h-10 items-center justify-center gap-2 rounded-full bg-orange px-5 text-sm font-semibold text-orange-foreground transition-all duration-300 hover:-translate-y-0.5 disabled:opacity-50">
               <RefreshCw className={`size-4 ${loading ? 'animate-spin' : ''}`} />
               Actualizar
             </button>
