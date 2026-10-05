@@ -385,7 +385,7 @@ function ClientRow({ client, canMoveUp, canMoveDown, onMoveUp, onMoveDown, onOpe
       <div className="col-span-2 min-w-0 md:col-span-1">
         <div className="text-xs text-brand-foreground/50">{clientLabel(client.nombre)}</div>
         <div className="font-bold">{client.nombre} {client.apellido}</div>
-        <div className="mt-1 truncate text-xs text-brand-foreground/55">{client.mail || 'Sin mail'} · {client.telefono || 'Sin teléfono'}</div>
+        <div className="mt-1 truncate text-xs text-brand-foreground/55">{client.telefono || 'Sin teléfono'}</div>
       </div>
       <div className="min-w-0">
         <div className="text-xs text-brand-foreground/50">Empresa</div>
