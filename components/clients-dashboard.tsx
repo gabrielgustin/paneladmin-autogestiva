@@ -71,6 +71,7 @@ export function ClientsDashboard() {
   const [form, setForm] = useState<ClientInput>(emptyForm)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
+  const [hasScrolled, setHasScrolled] = useState(false)
   const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set())
 
   const load = useCallback(async () => {
@@ -91,6 +92,9 @@ export function ClientsDashboard() {
 
   useEffect(() => {
     load()
+    const onScroll = () => setHasScrolled(window.scrollY > 24)
+    window.addEventListener('scroll', onScroll, { passive: true })
+    return () => window.removeEventListener('scroll', onScroll)
   }, [load])
 
   const plans = useMemo(() => [...new Set(clients.map((client) => client.plan).filter(Boolean))], [clients])
@@ -236,7 +240,7 @@ export function ClientsDashboard() {
             </Link>
           </div>
           <div className="flex w-full flex-wrap items-center gap-2 sm:w-auto">
-            <button onClick={load} aria-label={loading ? 'Sincronizando' : 'Actualizar datos'} disabled={loading} className="inline-flex h-10 items-center justify-center gap-2 rounded-full bg-orange px-5 text-sm font-semibold text-orange-foreground transition-all duration-300 hover:-translate-y-0.5 disabled:opacity-50">
+            <button onClick={load} aria-label={loading ? 'Sincronizando' : 'Actualizar datos'} disabled={loading} className={`${hasScrolled ? 'fixed right-3 top-3 z-50' : ''} inline-flex h-10 items-center justify-center gap-2 rounded-full bg-orange px-5 text-sm font-semibold text-orange-foreground transition-all duration-300 hover:-translate-y-0.5 disabled:opacity-50`}>
               <RefreshCw className={`size-4 ${loading ? 'animate-spin' : ''}`} />
               Actualizar
             </button>
