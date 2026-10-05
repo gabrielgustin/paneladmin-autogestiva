@@ -249,6 +249,7 @@ export function ClientsDashboard() {
         <>
             <section className="mb-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
               <Stat label="Clientes totales" value={totalEntries} icon={<UserRound />} />
+              <Stat label="Productos activos" value={activeProducts} icon={<CircleDollarSign />} />
               <Stat label="Recaudación mensual estimada" value={`$${Math.round(monthlyRevenue).toLocaleString('es-AR')}`} icon={<CircleDollarSign />} />
               <Stat
                 label="Próximo dominio a vencer"
@@ -262,7 +263,6 @@ export function ClientsDashboard() {
                 }
                 icon={<CalendarClock />}
               />
-              <Stat label="Productos activos" value={activeProducts} icon={<CircleDollarSign />} />
             </section>
             {error && <p role="alert" className="mb-4 text-sm text-red-300">{error}</p>}
             <section className="overflow-hidden rounded-xl border border-brand-foreground/15 bg-brand-foreground/10">
