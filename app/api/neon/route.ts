@@ -1,8 +1,11 @@
-import { getToken } from '@vercel/connect'
+import { getNeonToken } from '@/lib/neon-token'
 import { NextResponse } from 'next/server'
+import { mapLimit, neon, neonErrorMessage } from '@/lib/neon-api'
+import { requireAdmin } from '@/lib/require-admin'
 
-const CONNECTOR = 'neon/neon-account-usage-dashboard'
-const API = 'https://console.neon.tech/api/v2'
+export const dynamic = 'force-dynamic'
+export const maxDuration = 60
+
 
 // Neon Launch plan rates (USD). Compute and transfer overage are Neon's published Launch prices.
 const RATES = {
@@ -35,23 +38,13 @@ type Usage = {
   days: Map<string, number>
 }
 
-async function neon(path: string, token: string) {
-  const response = await fetch(`${API}${path}`, {
-    headers: { Authorization: `Bearer ${token}`, Accept: 'application/json' },
-    cache: 'no-store',
-  })
-  if (!response.ok) {
-    const detail = await response.text()
-    throw new Error(`Neon API error ${response.status}: ${detail.slice(0, 240)}`)
-  }
-  return response.json()
-}
-
 const round = (value: number) => Math.round(value * 100) / 100
 
 export async function GET(request: Request) {
+  const denied = await requireAdmin()
+  if (denied) return denied
   try {
-    const token = await getToken(CONNECTOR, { subject: { type: 'app' } })
+    const token = await getNeonToken()
     const requestedMonth = new URL(request.url).searchParams.get('month')
     const monthMatch = requestedMonth?.match(/^(\d{4})-(\d{2})$/)
     const now = new Date()
@@ -64,11 +57,12 @@ export async function GET(request: Request) {
     const isCurrentMonth = now >= monthStart && now < nextMonthStart
     const elapsedDays = isCurrentMonth ? Math.max(1, now.getUTCDate()) : daysInMonth
 
-    const projectsResponse = await neon('/projects', token)
+    const diagnostics: string[] = []
+    const projectsResponse = await neon('/projects?limit=400', token)
     const rawProjects = (projectsResponse.projects ?? []) as Record<string, unknown>[]
     const orgIds = [...new Set(rawProjects.map((project) => project.org_id).filter((id): id is string => typeof id === 'string'))]
     const endpointsByProject = new Map<string, { id: string; current_state?: string }>()
-    await Promise.all(rawProjects.map(async (project) => {
+    await mapLimit(rawProjects, 4, async (project) => {
       const projectId = typeof project.id === 'string' ? project.id : ''
       if (!projectId) return
       try {
@@ -77,13 +71,14 @@ export async function GET(request: Request) {
         if (endpoint?.id) endpointsByProject.set(projectId, { id: String(endpoint.id), current_state: typeof endpoint.current_state === 'string' ? endpoint.current_state : undefined })
       } catch (error) {
         console.error('[v0] Neon endpoint lookup error:', error)
+        diagnostics.push(`Endpoint de ${String(project.name ?? projectId)}: ${neonErrorMessage(error)}`)
       }
-    }))
+    })
     const from = monthStart.toISOString()
     const to = nextMonthStart.toISOString()
+    const consumptionFailed = new Set<string>()
     const usageByProject = new Map<string, Usage>()
     const planByProject = new Map<string, string>()
-    const diagnostics: string[] = []
     const metrics =
       'compute_unit_seconds,root_branch_bytes_month,child_branch_bytes_month,instant_restore_bytes_month,snapshot_storage_bytes_month,extra_branches_month,public_network_transfer_bytes'
     const useDaily = monthStart.getTime() >= now.getTime() - DAILY_LIMIT_DAYS * 86_400_000
@@ -166,7 +161,8 @@ export async function GET(request: Request) {
           }
         } catch (error) {
           const message = error instanceof Error ? error.message : String(error)
-          diagnostics.push(`${orgId}: ${message}`)
+          diagnostics.push(`Consumo (${orgId}): ${neonErrorMessage(error)}`)
+          consumptionFailed.add(orgId)
           console.error('[v0] Neon consumption history error:', message)
         }
       }),
@@ -250,10 +246,11 @@ export async function GET(request: Request) {
       },
       period: { month: selectedMonth, from, to },
       diagnostics,
+      consumptionAvailable: consumptionFailed.size === 0,
       syncedAt: new Date().toISOString(),
     })
   } catch (error) {
     console.error('[v0] Neon account usage error:', error)
-    return NextResponse.json({ error: 'No se pudieron cargar los datos de Neon.' }, { status: 502 })
+    return NextResponse.json({ error: neonErrorMessage(error) }, { status: 502 })
   }
 }

@@ -1,19 +1,13 @@
-import { getToken } from '@vercel/connect'
+import { getNeonToken } from '@/lib/neon-token'
 import { NextRequest, NextResponse } from 'next/server'
+import { neon } from '@/lib/neon-api'
+import { requireAdmin } from '@/lib/require-admin'
 import { Client } from 'pg'
 
-const CONNECTOR = 'neon/neon-account-usage-dashboard'
-const API = 'https://console.neon.tech/api/v2'
 const MAX_PAGE_SIZE = 100
 const MAX_CELL_LENGTH = 2000
 
 const quote = (identifier: string) => `"${identifier.replace(/"/g, '""')}"`
-
-async function neon(path: string, token: string) {
-  const response = await fetch(`${API}${path}`, { headers: { Authorization: `Bearer ${token}` }, cache: 'no-store' })
-  if (!response.ok) throw new Error(`Neon API ${response.status}`)
-  return response.json()
-}
 
 function serializeCell(value: unknown) {
   if (value === null || value === undefined) return null
@@ -24,6 +18,8 @@ function serializeCell(value: unknown) {
 }
 
 export async function GET(request: NextRequest) {
+  const denied = await requireAdmin()
+  if (denied) return denied
   const params = request.nextUrl.searchParams
   const projectId = params.get('projectId')
   const schemaName = params.get('schema') || 'public'
@@ -38,7 +34,7 @@ export async function GET(request: NextRequest) {
 
   let client: Client | null = null
   try {
-    const token = await getToken(CONNECTOR, { subject: { type: 'app' } })
+    const token = await getNeonToken()
     const id = encodeURIComponent(projectId)
     const { branches } = await neon(`/projects/${id}/branches`, token)
     const branch = branches?.find((item: { primary?: boolean }) => item.primary) ?? branches?.[0]

@@ -22,8 +22,16 @@ function nextPaymentDate(method: string, lastPayment: string) {
     return next.toISOString().slice(0, 10)
   }
   const months = method === 'Pago semestral' ? 6 : method === 'Pago anual' ? 12 : 1
+  const day = date.getDate()
+  date.setDate(1)
   date.setMonth(date.getMonth() + months)
+  date.setDate(Math.min(day, new Date(date.getFullYear(), date.getMonth() + 1, 0).getDate()))
   return date.toISOString().slice(0, 10)
+}
+
+function formatDate(value: string) {
+  const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(value)
+  return match ? `${match[3]}/${match[2]}/${match[1]}` : value || '—'
 }
 
 function toInput(client: SheetClient): ClientInput {
@@ -261,7 +269,7 @@ export function ClientsDashboard() {
                   <>
                     <span className="block truncate">{nextExpiringDomain?.client.empresa || 'Sin empresa'}</span>
                     <span className="mt-1 block text-sm font-medium text-brand-foreground/50">
-                      {nextExpiringDomain ? nextExpiringDomain.date.toLocaleDateString('es-AR') : 'Sin fecha registrada'}
+                      {nextExpiringDomain ? nextExpiringDomain.date.toLocaleDateString('es-AR', { day: '2-digit', month: '2-digit', year: 'numeric' }) : 'Sin fecha registrada'}
                     </span>
                   </>
                 }
@@ -404,15 +412,15 @@ function ClientDetails({ client, onClose }: { client: SheetClient; onClose: () =
     ['Empresa', client.empresa],
     ['Producto', client.producto],
     ['Dominio', client.dominio],
-    ['Vencimiento del dominio', client.dominioVencimiento],
+    ['Vencimiento del dominio', formatDate(client.dominioVencimiento)],
     ['Mail', client.mail],
-    ['Tel��fono', client.telefono],
+    ['Teléfono', client.telefono],
     ['Servidor', client.servidor],
     ['Base de datos', client.baseDatos],
     ['Plan', client.plan],
     ['Método de pago', client.metodoPago],
-    ['Último pago', client.ultimoPago],
-    ['Próximo pago', client.proximoPago],
+    ['Último pago', formatDate(client.ultimoPago)],
+    ['Próximo pago', formatDate(client.proximoPago)],
   ]
 
   return (
@@ -531,13 +539,13 @@ function ClientRow({ client, canMoveUp, canMoveDown, onMoveUp, onMoveDown, onOpe
       <div className="min-w-0">
         <div className="text-xs text-brand-foreground/50">Dominio</div>
         <div className={`truncate text-sm ${client.dominio === '-' ? 'text-center' : ''}`}>{client.dominio || '—'}</div>
-        <div className="mt-1 text-[11px] text-brand-foreground/45">Vence: {client.dominioVencimiento || '—'}</div>
+        <div className="mt-1 text-[11px] text-brand-foreground/45">Vence: {formatDate(client.dominioVencimiento)}</div>
       </div>
       <div className="min-w-0">
         <div className="text-xs text-brand-foreground/50">Servidor</div>
         <div className={`truncate text-sm ${client.servidor === '-' ? 'text-center' : ''}`}>{client.servidor || '—'}</div>
       </div>
-      <div className="min-w-0 text-center">
+      <div className="min-w-0 md:text-center">
         <div className="text-xs text-brand-foreground/50">Base de datos</div>
         <div className="truncate text-sm">{client.baseDatos || '—'}</div>
       </div>

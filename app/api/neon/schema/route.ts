@@ -1,8 +1,8 @@
-import { getToken } from '@vercel/connect'
+import { getNeonToken } from '@/lib/neon-token'
 import { NextRequest, NextResponse } from 'next/server'
+import { neon } from '@/lib/neon-api'
+import { requireAdmin } from '@/lib/require-admin'
 
-const CONNECTOR = 'neon/neon-account-usage-dashboard'
-const API = 'https://console.neon.tech/api/v2'
 
 type SchemaTable = { name: string; schema: string; columns: unknown[] }
 
@@ -35,18 +35,13 @@ function normalizeTables(payload: Record<string, unknown>): SchemaTable[] {
   })
 }
 
-async function neon(path: string, token: string) {
-  const response = await fetch(`${API}${path}`, { headers: { Authorization: `Bearer ${token}` }, cache: 'no-store' })
-  if (!response.ok) throw new Error(`Neon API ${response.status}`)
-  const contentType = response.headers.get('content-type') ?? ''
-  return contentType.includes('json') ? response.json() : response.text()
-}
-
 export async function GET(request: NextRequest) {
+  const denied = await requireAdmin()
+  if (denied) return denied
   const projectId = request.nextUrl.searchParams.get('projectId')
   if (!projectId) return NextResponse.json({ error: 'projectId es requerido' }, { status: 400 })
   try {
-    const token = await getToken(CONNECTOR, { subject: { type: 'app' } })
+    const token = await getNeonToken()
     const projectResponse = await neon(`/projects/${encodeURIComponent(projectId)}`, token)
     const project = projectResponse.project ?? projectResponse
     const branches = await neon(`/projects/${encodeURIComponent(projectId)}/branches`, token)
