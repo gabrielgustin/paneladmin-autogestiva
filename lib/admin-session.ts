@@ -8,9 +8,12 @@ export const SESSION_SECONDS = 60 * 10
 export const CLOSING_GRACE_SECONDS = 15
 
 function secret() {
-  const value = process.env.BETTER_AUTH_SECRET
-  if (!value) throw new Error('Falta BETTER_AUTH_SECRET')
-  return value
+  const explicit = process.env.BETTER_AUTH_SECRET
+  if (explicit) return explicit
+  // Falls back to a key derived from the Supabase service key so no extra secret is needed.
+  const base = process.env.SUPABASE_SERVICE_ROLE_KEY
+  if (!base) throw new Error('Falta BETTER_AUTH_SECRET o SUPABASE_SERVICE_ROLE_KEY')
+  return createHash('sha256').update(`admin-session:${base}`).digest('hex')
 }
 
 function sign(payload: string) {
@@ -23,24 +26,10 @@ export function safeEqual(a: string, b: string) {
   return timingSafeEqual(left, right)
 }
 
-export function credentialsAreValid(email: string, password: string) {
-  const adminEmail = process.env.ADMIN_EMAIL
-  const adminPassword = process.env.ADMIN_PASSWORD
-  if (!adminEmail || !adminPassword) return false
-  const emailOk = safeEqual(email.trim().toLowerCase(), adminEmail.trim().toLowerCase())
-  const passwordOk = safeEqual(password, adminPassword)
-  return emailOk && passwordOk
-}
-
-// Stable subject for Vercel Connect, derived from the server-side admin identity.
-export function adminSubjectId() {
-  const email = (process.env.ADMIN_EMAIL ?? '').trim().toLowerCase()
-  return createHash('sha256').update(email).digest('hex').slice(0, 24)
-}
-
-export function createSessionToken(seconds = SESSION_SECONDS) {
+// `userId` is the Supabase Auth user id of the admin the session belongs to.
+export function createSessionToken(userId: string, seconds = SESSION_SECONDS) {
   const payload = Buffer.from(
-    JSON.stringify({ sub: adminSubjectId(), exp: Math.floor(Date.now() / 1000) + seconds }),
+    JSON.stringify({ sub: userId, exp: Math.floor(Date.now() / 1000) + seconds }),
   ).toString('base64url')
   return `${payload}.${sign(payload)}`
 }
@@ -51,7 +40,7 @@ function verifySessionToken(token: string | undefined) {
   if (!payload || !signature || !safeEqual(signature, sign(payload))) return null
   try {
     const data = JSON.parse(Buffer.from(payload, 'base64url').toString()) as { sub: string; exp: number }
-    if (data.exp < Math.floor(Date.now() / 1000) || data.sub !== adminSubjectId()) return null
+    if (data.exp < Math.floor(Date.now() / 1000) || typeof data.sub !== 'string' || !data.sub) return null
     return { id: data.sub }
   } catch {
     return null

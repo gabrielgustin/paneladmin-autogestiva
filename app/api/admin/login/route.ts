@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
-import { SESSION_COOKIE, createSessionToken, credentialsAreValid, sessionCookieOptions } from '@/lib/admin-session'
+import { SESSION_COOKIE, createSessionToken, sessionCookieOptions } from '@/lib/admin-session'
+import { verifyAdminCredentials } from '@/lib/admin-auth'
 
 const MAX_ATTEMPTS = 5
 const WINDOW_MS = 15 * 60 * 1000
@@ -27,7 +28,14 @@ export async function POST(request: Request) {
   const email = typeof body.email === 'string' ? body.email : ''
   const password = typeof body.password === 'string' ? body.password : ''
 
-  if (!credentialsAreValid(email, password)) {
+  let adminId: string | null = null
+  try {
+    adminId = await verifyAdminCredentials(email, password)
+  } catch (error) {
+    console.error('[admin] login check failed:', error)
+    return NextResponse.json({ error: 'No se pudo verificar el acceso. Probá de nuevo en unos minutos.' }, { status: 503 })
+  }
+  if (!adminId) {
     const current = entry && entry.resetAt > now ? entry : { count: 0, resetAt: now + WINDOW_MS }
     attempts.set(key, { count: current.count + 1, resetAt: current.resetAt })
     await new Promise((resolve) => setTimeout(resolve, 500))
@@ -36,6 +44,6 @@ export async function POST(request: Request) {
 
   attempts.delete(key)
   const response = NextResponse.json({ ok: true })
-  response.cookies.set(SESSION_COOKIE, createSessionToken(), sessionCookieOptions())
+  response.cookies.set(SESSION_COOKIE, createSessionToken(adminId), sessionCookieOptions())
   return response
 }

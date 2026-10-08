@@ -8,8 +8,9 @@ import {
 } from '@/lib/admin-session'
 
 export async function POST() {
-  if (!(await getAdminSession())) return new NextResponse(null, { status: 204 })
+  const session = await getAdminSession()
+  if (!session) return new NextResponse(null, { status: 204 })
   const response = new NextResponse(null, { status: 204 })
-  response.cookies.set(SESSION_COOKIE, createSessionToken(CLOSING_GRACE_SECONDS), sessionCookieOptions(CLOSING_GRACE_SECONDS))
+  response.cookies.set(SESSION_COOKIE, createSessionToken(session.id, CLOSING_GRACE_SECONDS), sessionCookieOptions(CLOSING_GRACE_SECONDS))
   return response
 }
