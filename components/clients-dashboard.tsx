@@ -3,8 +3,9 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { LogoutButton } from '@/components/session-guard'
-import { ArrowLeft, CalendarClock, ChevronDown, ChevronUp, CircleDollarSign, Database, Pencil, Plus, RefreshCw, Search, Server, Trash2, UserRound, X } from 'lucide-react'
+import { ArrowLeft, CalendarClock, ChevronDown, ChevronUp, CircleDollarSign, Database, Download, Pencil, Plus, RefreshCw, Search, Server, Trash2, UserRound, X } from 'lucide-react'
 import Link from 'next/link'
+import { buildClientAlerts, describeDays } from '@/lib/client-alerts'
 import { COLUMN_LABELS, fingerprint, type ClientInput, type SheetClient } from '@/lib/clients-shared'
 
 const emptyForm: ClientInput = { nombre: '', apellido: '', empresa: '', producto: '', dominio: '', dominioVencimiento: '', mail: '', telefono: '', servidor: '', baseDatos: '', plan: '', metodoPago: '', ultimoPago: '', proximoPago: '' }
@@ -123,6 +124,7 @@ export function ClientsDashboard() {
       .filter(({ date }) => date >= today)
       .sort((a, b) => a.date.getTime() - b.date.getTime())[0] ?? null
   }, [clients])
+  const alerts = useMemo(() => buildClientAlerts(clients), [clients])
   const filtered = useMemo(
     () =>
       clients.filter((client) => {
@@ -252,6 +254,7 @@ export function ClientsDashboard() {
               <RefreshCw className={`size-4 ${loading ? 'animate-spin' : ''}`} />
               <span className={hasScrolled ? 'sr-only' : ''}>Actualizar</span>
             </button>
+            <a href="/api/clients/export" download className="inline-flex h-10 items-center justify-center gap-2 rounded-full border border-brand-foreground/20 px-4 text-sm font-bold hover:bg-brand-foreground/10"><Download className="size-4" aria-hidden="true" />Exportar CSV</a>
             <LogoutButton />
           </div>
         </div>
@@ -276,6 +279,19 @@ export function ClientsDashboard() {
                 icon={<CalendarClock />}
               />
             </section>
+            {alerts.length > 0 && (
+              <section aria-label="Vencimientos próximos" className="mb-6 rounded-xl border border-orange/50 bg-orange/15 p-5">
+                <div className="text-xs font-bold uppercase tracking-[0.16em] text-orange">Vencimientos · {alerts.length} {alerts.length === 1 ? 'aviso' : 'avisos'}</div>
+                <ul className="mt-3 grid gap-2 text-sm md:grid-cols-2">
+                  {alerts.map((alert) => (
+                    <li key={alert.id} className="flex items-start justify-between gap-3 rounded-lg border border-brand-foreground/10 bg-brand/40 px-3 py-2">
+                      <span className="min-w-0"><span className="font-semibold">{alert.cliente}</span><span className="block truncate text-xs text-brand-foreground/60">{alert.type === 'dominio' ? 'Dominio' : 'Pago'} · {alert.detalle} · {formatDate(alert.date)}</span></span>
+                      <span className={`shrink-0 rounded-full px-2 py-0.5 text-[11px] font-bold ${alert.days < 0 ? 'bg-red-500/80 text-white' : 'bg-orange text-orange-foreground'}`}>{describeDays(alert.days)}</span>
+                    </li>
+                  ))}
+                </ul>
+              </section>
+            )}
             {error && <p role="alert" className="mb-4 text-sm text-red-300">{error}</p>}
             <section className="overflow-hidden rounded-xl border border-brand-foreground/15 bg-brand-foreground/10">
               <div className="flex flex-col gap-3 border-b border-brand-foreground/10 p-3 sm:p-4 md:flex-row">
