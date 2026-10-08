@@ -63,7 +63,7 @@ El botón **Exportar CSV** de Clientes descarga todos los clientes. Hacelo una v
 
 ## Flujo de trabajo
 
-Cambios en una rama, Pull Request hacia `main` y merge; Vercel despliega solo al hacer merge.
+Se trabaja directo sobre `main`, sin ramas: commit y push, y Vercel despliega solo. Antes de cada push, comprobá que compile con `npm run build`.
 
 ## Estructura
 
