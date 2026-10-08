@@ -52,7 +52,11 @@ export async function mapLimit<T>(items: T[], limit: number, task: (item: T) => 
 
 export function neonErrorMessage(error: unknown) {
   if (error instanceof NeonApiError) {
-    if (error.status === 401 || error.status === 403) return 'Neon rechazó la API key (no es válida o no tiene permisos).'
+    if (error.status === 401 || error.status === 403) {
+      return process.env.NEON_API_KEY?.trim()
+        ? 'Neon rechazó la NEON_API_KEY cargada en el servidor (revocada, incompleta o con permisos insuficientes).'
+        : 'El servidor no tiene NEON_API_KEY y Neon rechazó el acceso por Vercel Connect. Cargá NEON_API_KEY y redeployá.'
+    }
     if (error.status === 429) return 'Neon limitó las consultas por demasiadas solicitudes. Reintentá en un momento.'
     return `Neon respondió con un error (${error.status}).`
   }
